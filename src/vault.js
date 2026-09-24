@@ -188,7 +188,12 @@
                                   // 用户点清除全部数据时，留着它等于把日记偷偷留了一份。
     'xinxu.sandbox.draft.v1',     // 沙盘草稿
     'xinxu.sandbox.scenes.v1',    // 沙盘存档
-    'xinxu.sandbox.marks.v1'      // 沙盘见证
+    'xinxu.sandbox.marks.v1',     // 沙盘见证
+    'xinxu.devices.v1',           // 设备数据（含占位数据）
+    'xinxu.memory.v1',            // 长期记忆
+    'xinxu.memory.pending.v1',    // 待确认的记忆提议
+    'xinxu.agent.config.v1',      // 模型提供方与后端地址
+    'xinxu.agent.sessions.v1'     // 精简会话日志
   ];
 
   function clearAll() {

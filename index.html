@@ -82,6 +82,7 @@
   .h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.7rem,5.5vw,2.35rem);
     line-height:1.35;letter-spacing:1px}
   .sub{color:var(--muted);margin-top:10px;max-width:44ch}
+  a.xsup-entry{text-decoration:none;display:inline-block}
 
   /* 打卡平面由 src/mood.js 注入样式，这里不再需要六宫格的规则 */
 
@@ -266,6 +267,7 @@
     <header class="topbar">
       <div class="brand">心绪<small>情绪日记 · 自我关怀</small></div>
       <div class="date">
+        <a class="xsup-entry" id="toAssist" href="assist.html">对话</a>
         <button class="xsup-entry" id="xinxuSafe" type="button">安全与支持</button>
         <strong id="todayStr">—</strong>
         <div id="streak" class="streak"></div>
@@ -514,7 +516,8 @@
       html+='<div class="dayrow"><div class="drtop"><span class="dt2">'+M.hmOf(e.ts)+'</span>'+
         '<span class="dm" style="color:'+m.c+'">'+m.e+' '+m.label+'</span>'+
         '<span class="ds2">'+M.strengthLabel(e.v,e.a)+'</span>'+
-        (e.from==="sandbox"?'<span class="src">沙盘</span>':'')+'</div>'+
+        (e.from==="sandbox"?'<span class="src">沙盘</span>':'')+
+        (e.from==="agent"?'<span class="src">对话</span>':'')+'</div>'+
         (e.note?'<div class="nt">'+esc(e.note)+'</div>':'')+
         (tags?'<div class="ts">'+tags+'</div>':'')+'</div>';
     });
@@ -710,6 +713,8 @@
       const tags=(e.tags||[]).map(t=>"<span>"+esc(t)+"</span>").join("");
       const meta = e.from==="sandbox"
         ? '<span class="src">来自沙盘'+(e.scene?' · 《'+esc(e.scene)+'》':'')+'</span>'
+        : e.from==="agent"
+        ? '<span class="src">记于对话 · '+M.hmOf(e.ts)+'</span>'
         : '<span class="dt">'+e.date+' '+M.hmOf(e.ts)+' · '+M.strengthLabel(e.v,e.a)+'</span>';
       return '<div class="entry"><div class="em">'+m.e+'</div><div class="bd">'+
         '<div class="top"><span class="ml" style="color:'+m.c+'">'+m.label+'</span>'+
