@@ -1,6 +1,6 @@
 # AI 交流整合接口
 
-2026-09-24。独立 `ai-support/` 演示切片已并入现有 `assist.html`、`src/agent.js`、`src/memory.js` 与 `server/assist.py`，只保留一个交流入口和一个模型网关。登录后 `index.html` 是唯一主页；交流页作为同源子视图从主页打开。未登录时直接访问子页面仍先回到日记主页；已登录时可定位到主页中的对应模块。
+2026-09-24。独立 `ai-support/` 演示切片已并入现有 `assist.html`、`src/agent.js`、`src/memory.js` 与 `server/assist.py`，只保留一个交流入口和一个模型网关。登录后 `index.html` 是主页，设备信息由主页组件呈现；“聊一聊”是从主页进入的独立页面。未登录时直接访问交流页会先回主页登录。
 
 ## 页面与接口
 
@@ -24,7 +24,7 @@
 
 `history` 最多六条本页会话。 `context` 仅包含用户本次勾选的情绪记录摘要、已确认记忆或设备线索；沙盘内容与日记原文不传。后端返回 `reply`、`generatedBy`、`strategy`、`understanding`、`actions`、`suggest` 和 `safety`。记忆候选由现有记忆模块暂存，用户确认才写入；行动可采用、编辑或跳过，不自动写日记或联系他人。
 
-对话分析模块后续可传 `analysis.strategyHint`，限 `reflect/clarify/ground/reframe/plan`，服务端仅在本次目标允许时采用。穿戴模块只通过现有 `XinxuWearables.contextFor` 接入，页面默认不发送。真实设备授权仍由该模块负责。
+对话分析模块后续可传 `analysis.strategyHint`，限 `reflect/clarify/ground/reframe/plan`，服务端仅在本次目标允许时采用。设备数据在主页 `src/device-panel.js` 展示；交流页只提供单独勾选，勾选后通过 `XinxuWearables.contextFor` 读取背景线索，默认不发送。真实设备授权仍由穿戴模块负责。
 
 ## 部署边界
 

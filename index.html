@@ -77,8 +77,8 @@
     color:var(--muted);letter-spacing:1px;margin-top:3px}
   .date{text-align:right;color:var(--muted);font-size:.82rem}
   .home-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:4px}
-  .home-actions button{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer}
-  .home-actions button:hover{color:var(--lamp)}
+  .home-actions button,.home-actions a{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer;text-decoration:none}
+  .home-actions button:hover,.home-actions a:hover{color:var(--lamp)}
   .date strong{display:block;color:var(--paper);font-family:var(--serif);font-weight:600;font-size:1.02rem}
   .streak{margin-top:3px;font-size:.72rem;color:var(--lamp)}
 
@@ -115,10 +115,23 @@
   .save:hover{filter:brightness(1.05)}
   .module-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
   .module-card{display:block;text-align:left;background:var(--ink2);color:var(--paper);border:1px solid var(--line);
-    border-radius:var(--r-lg);padding:18px;cursor:pointer;font:inherit}
+    border-radius:var(--r-lg);padding:18px;cursor:pointer;font:inherit;text-decoration:none}
   .module-card b{display:block;font-family:var(--serif);font-size:1.05rem}
   .module-card span{display:block;color:var(--muted);font-size:.78rem;margin-top:5px}
   .module-card:hover{border-color:var(--lamp)}
+  .device-platform{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 0;border-top:1px solid var(--line)}
+  .device-platform:first-child{border-top:0}
+  .device-platform .info{flex:1;min-width:150px}
+  .device-platform b{font-size:.88rem;font-weight:600}
+  .device-platform small{display:block;color:var(--muted);font-size:.72rem;line-height:1.5}
+  .device-platform button{border:1px solid var(--line);background:transparent;color:var(--paper);
+    padding:7px 11px;border-radius:99px;cursor:pointer;font:inherit;font-size:.76rem}
+  .device-platform button:hover{border-color:var(--lamp)}
+  .device-note{color:var(--muted);font-size:.76rem;line-height:1.6;margin-top:9px}
+  .device-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+  .device-metric{background:var(--ink3);border-radius:var(--r-md);padding:12px}
+  .device-metric b{display:block;font-family:var(--serif);font-size:1rem}
+  .device-metric span{display:block;color:var(--muted);font-size:.73rem}
   .module-layer{position:fixed;inset:0;background:var(--ink);z-index:80;display:flex;flex-direction:column}
   .module-layer[hidden],.settings-layer[hidden]{display:none!important}
   .module-bar{height:60px;flex:none;padding:10px 20px;display:flex;align-items:center;gap:14px;
@@ -145,7 +158,7 @@
   .settings-goals button{border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--paper);
     padding:7px 11px;cursor:pointer;font:inherit}
   .settings-goals button[aria-pressed="true"]{background:var(--lamp);border-color:var(--lamp);color:var(--ink)}
-  @media(max-width:560px){.module-cards{grid-template-columns:1fr}.home-actions{gap:5px}}
+  @media(max-width:560px){.module-cards,.device-metrics{grid-template-columns:1fr}.home-actions{gap:5px}}
 
   .padcare{font-size:.84rem;color:var(--muted);margin-top:4px;line-height:1.7;min-height:1.6em}
   .spark .cap .lg{display:inline-block;width:9px;height:3px;border-radius:2px;margin:0 5px 0 0;
@@ -307,7 +320,7 @@
     <header class="topbar">
       <div class="brand">心绪<small>情绪日记 · 自我关怀</small></div>
       <div class="date">
-        <div class="home-actions"><button id="toAssist" data-open-module="assist" type="button">交流</button>
+        <div class="home-actions"><a id="toAssist" href="assist.html">交流</a>
         <button id="xinxuSafe" type="button">安全与支持</button>
         <button id="openSettings" type="button">设置</button></div>
         <strong id="todayStr">—</strong>
@@ -342,7 +355,7 @@
     <section class="sec" aria-labelledby="h-next">
       <div class="sec-head"><h2 class="h2" id="h-next">此刻还想做什么</h2></div>
       <div class="module-cards">
-        <button class="module-card" type="button" data-open-module="assist"><b>聊一聊</b><span>说说现在，选择希望被怎样回应</span></button>
+        <a class="module-card" href="assist.html"><b>聊一聊</b><span>说说现在，选择希望被怎样回应</span></a>
         <button class="module-card" type="button" data-open-module="sandbox"><b>摆一个世界</b><span>不想打字时，用沙盘表达</span></button>
       </div>
     </section>
@@ -354,6 +367,15 @@
       <div class="trend-wrap">
         <div class="spark"><div class="cap"><i class="lg v"></i>效价<i class="lg a"></i>唤醒度<span id="sparkWin"></span></div><svg id="spark" viewBox="0 0 700 130" preserveAspectRatio="none" aria-hidden="true"></svg></div>
         <div class="day-detail" id="dayDetail"><div class="when">选择一天查看记录</div></div>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-devices">
+      <div class="sec-head"><h2 class="h2" id="h-devices">设备与身体线索</h2><span class="hint">仅供你自己回看</span></div>
+      <div class="panel" id="homeDevices">
+        <p class="device-note">当前设备接口只提供演示数据。睡眠、步数等数字不能推断你的情绪；是否在交流中提供这些线索，由你在交流页单独勾选。</p>
+        <div id="devicePlatforms"></div>
+        <div id="deviceSummary"></div>
       </div>
     </section>
 
@@ -826,6 +848,8 @@
 <script src="src/safety-content.js"></script>
 <script src="src/vault.js"></script>
 <script src="src/memory.js"></script>
+<script src="src/wearables.js"></script>
+<script src="src/device-panel.js"></script>
 <script src="src/onboarding.js"></script>
 <script src="src/safety.js"></script>
 <script src="src/support.js"></script>
@@ -834,9 +858,10 @@
   "use strict";
   var $ = function (s) { return document.querySelector(s); };
   var layer = $("#moduleLayer"), frame = $("#moduleFrame"), current = "";
-  var routes = { assist: { src: "assist.html", title: "交流" }, sandbox: { src: "sandbox.html", title: "沙盘" } };
+  var routes = { sandbox: { src: "sandbox.html", title: "沙盘" } };
   function syncModule() {
     var key = location.hash.slice(1), route = routes[key];
+    if (key === "assist" && XinxuOnboarding.unlocked()) { location.replace("assist.html"); return; }
     if (!route || !XinxuOnboarding.unlocked() || !XinxuVault.hasConsented()) {
       layer.hidden = true;
       if (current) { frame.removeAttribute("src"); current = ""; }
@@ -856,8 +881,18 @@
   window.addEventListener("xinxu:ready", syncModule);
 
   function renderMemory() {
-    var box = $("#settingsMemory"), items = XinxuMemory.list();
+    var box = $("#settingsMemory"), items = XinxuMemory.list(), pending = XinxuMemory.pending();
     box.textContent = "";
+    if (pending.length) {
+      var note = document.createElement("p"); note.textContent = "待确认的建议：" + pending.map(function (p) { return p.text; }).join("；");
+      box.appendChild(note);
+      var actions = document.createElement("div"); actions.className = "settings-row";
+      var accept = document.createElement("button"); accept.type = "button"; accept.textContent = "全部记住";
+      accept.onclick = function () { XinxuMemory.resolve(true); renderMemory(); };
+      var decline = document.createElement("button"); decline.type = "button"; decline.textContent = "全部忽略";
+      decline.onclick = function () { XinxuMemory.dropPending(); renderMemory(); };
+      actions.appendChild(accept); actions.appendChild(decline); box.appendChild(actions);
+    }
     if (!items.length) { var empty = document.createElement("p"); empty.textContent = "还没有保存长期记忆。"; box.appendChild(empty); return; }
     items.forEach(function (item) {
       var row = document.createElement("div"); row.className = "settings-row";
