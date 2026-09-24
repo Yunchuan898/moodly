@@ -6,6 +6,14 @@
 <meta name="theme-color" content="#221D36" />
 <title>沙盘 · 摆一个世界</title>
 <meta name="description" content="一盘沙，一些微缩模型。不用说话，摆出来就好。" />
+<style>html.xo-pending .shell{visibility:hidden}</style>
+<script>
+  /* 还没走完首次引导就先藏住内容，免得遮罩出现前闪一下。 */
+  try{
+    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1")))
+      document.documentElement.className += " xo-pending";
+  }catch(e){ document.documentElement.className += " xo-pending"; }
+</script>
 <style>
   :root{
     --ink:#221D36; --ink2:#2A2440; --ink3:#332C4E; --line:#3B3358;
@@ -341,6 +349,7 @@
       <a class="back" href="index.html">← 心绪</a>
       <div class="brand">沙盘<small>摆一个世界</small></div>
       <div class="top-act">
+        <button class="xsup-entry" id="xinxuSafe" type="button">安全与支持</button>
         <button class="btn" id="openGallery">我的沙盘<span class="n" id="galN"></span></button>
         <button class="btn primary" id="openFinish">完成</button>
       </div>
@@ -1009,5 +1018,11 @@
 
 })();
 </script>
+<!-- 顺序有依赖：onboarding 要用 vault，support 要用 onboarding 的须知渲染 -->
+<script src="src/safety-content.js"></script>
+<script src="src/vault.js"></script>
+<script src="src/onboarding.js"></script>
+<script src="src/safety.js"></script>
+<script src="src/support.js"></script>
 </body>
 </html>
