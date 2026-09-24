@@ -275,14 +275,7 @@
     color:var(--paper);font-family:var(--serif);font-size:1rem;padding:12px 14px;margin-top:10px}
   .modal input[type=text]::placeholder{color:var(--faint)}
 
-  .moodrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-  .moodrow button{
-    border:1px solid var(--line);background:transparent;color:var(--muted);
-    padding:6px 13px;border-radius:99px;font-size:.82rem;cursor:pointer;
-    font-family:var(--sans);transition:.15s}
-  .moodrow button[aria-pressed="true"]{
-    background:color-mix(in srgb,var(--mc) 22%,var(--ink3));
-    border-color:var(--mc);color:var(--paper);font-weight:500}
+  .padbox{max-width:280px;margin:10px auto 0}
   .fieldlabel{font-size:.78rem;color:var(--muted);margin-top:20px;letter-spacing:.3px}
   .fieldlabel b{color:var(--paper);font-weight:500}
 
@@ -416,7 +409,7 @@
       <input type="text" id="sceneName" placeholder="比如：那天下午" maxlength="24" />
 
       <div class="fieldlabel"><b>这一刻的心情</b>（可选，会记进心绪的日记）</div>
-      <div class="moodrow" id="moodRow"></div>
+      <div class="padbox" id="padBox"></div>
 
       <div class="witness" id="witnessBox"><em>留给你自己</em><span id="witnessText"></span></div>
 
@@ -451,6 +444,8 @@
 <script src="src/shelf.js"></script>
 <script src="src/scene.js"></script>
 <script src="src/witness.js"></script>
+<!-- 情绪模型：和 index.html 引的是同一份，存取与迁移逻辑不会漂移 -->
+<script src="src/mood.js"></script>
 <script>
 (function () {
   "use strict";
@@ -458,15 +453,8 @@
   var layer = $("#layer"), inner = $("#trayInner"), canvas = $("#sand"),
       brushEl = $("#brush"), ghost = $("#ghost");
 
-  var MOODS = [
-    { key:"happy",   label:"开心", e:"☀️", c:"#F2C94C" },
-    { key:"calm",    label:"平静", e:"🌤️", c:"#7FB8E6" },
-    { key:"anxious", label:"焦虑", e:"🌦️", c:"#E88C5A" },
-    { key:"tired",   label:"疲惫", e:"☁️",  c:"#8E8AA6" },
-    { key:"sad",     label:"难过", e:"🌧️", c:"#6E8FD9" },
-    { key:"angry",   label:"生气", e:"⛈️", c:"#E07A6B" },
-  ];
-  var ENTRIES_KEY = "xinxu.entries.v1";
+  var M = window.XinxuMood;
+  var pad = null;                   // 完成面板里的情绪平面
 
   var mode = "dig";                 // dig | pile
   var brushR = 0.055;
@@ -475,7 +463,6 @@
   var brushing = false;
   var lastPt = null;                // 上一帧的笔刷位置（用于连续涂抹）
   var drag = null;                  // 拖动中的沙具
-  var selMood = null;
   var lastFrame = 0;
 
   /* ---------- 工具 ---------- */
@@ -484,12 +471,6 @@
     clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove("show"); }, 2200);
   }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-  /* 本地日期。心绪的日记用的是本地日期，这里必须一致，
-     否则晚上写的那条会在时间线上错开一天。 */
-  function today() {
-    var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
-    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
-  }
   function refreshRect() { trayRect = inner.getBoundingClientRect(); }
   function ptToTray(e) {
     if (!trayRect) refreshRect();
@@ -839,24 +820,12 @@
 
   /* ---------- 完成 ---------- */
   function renderMoodRow() {
-    var box = $("#moodRow"); box.innerHTML = "";
-    MOODS.forEach(function (m) {
-      var b = document.createElement("button");
-      b.textContent = m.e + " " + m.label;
-      b.style.setProperty("--mc", m.c);
-      b.setAttribute("aria-pressed", "false");
-      b.onclick = function () {
-        var on = b.getAttribute("aria-pressed") === "true";
-        box.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
-        b.setAttribute("aria-pressed", on ? "false" : "true");
-        selMood = on ? null : m.key;
-      };
-      box.appendChild(b);
-    });
+    var box = $("#padBox");
+    box.innerHTML = "";
+    pad = M.Pad(box, {compact:true});   // 窄面板，锚点只留图标；没点就没记
   }
 
   $("#openFinish").onclick = function () {
-    selMood = null;
     $("#sceneName").value = "";
     renderMoodRow();
     $("#witnessText").textContent = Witness.pick();
@@ -882,23 +851,17 @@
       }
 
       var wrote = false;
-      if (selMood) {
-        try {
-          var arr = JSON.parse(localStorage.getItem(ENTRIES_KEY) || "[]");
-          if (!Array.isArray(arr)) arr = [];
-          arr.unshift({
-            id: Date.now(),
-            date: today(),
-            mood: selMood,
-            intensity: 3,
-            note: "摆了一个沙盘" + (name ? "：《" + name + "》" : ""),
-            tags: [],
-            from: "sandbox",
-            scene: name,
-          });
-          localStorage.setItem(ENTRIES_KEY, JSON.stringify(arr));
-          wrote = true;
-        } catch (err) {}
+      if (pad && pad.touched()) {
+        var p = pad.get(), now = Date.now();
+        // 走共享模块：它会先确保 v1 的老日记已经迁过来，再追加。
+        // 自己写 localStorage 的话，用户若从没打开过首页，旧日记就丢了。
+        M.appendEntry({
+          id: now, ts: now, date: M.ymdOf(now),
+          v: +p.v.toFixed(4), a: +p.a.toFixed(4),
+          note: "摆了一个沙盘" + (name ? "：《" + name + "》" : ""),
+          tags: [], from: "sandbox", scene: name,
+        });
+        wrote = true;
       }
 
       btn.disabled = false; btn.textContent = "保存这个世界";
