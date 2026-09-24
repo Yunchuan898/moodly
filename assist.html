@@ -326,7 +326,7 @@
       var e = res.suggest.entry;
       var near = window.XinxuMood.nearest(e.v, e.a);
       html += '<div class="pitem"><span class="k">心情</span><span class="t">' +
-        near.e + " " + esc(near.label) + " · " + window.XinxuMood.strengthLabel(e.v, e.a) +
+        window.XinxuMood.icon(near.key, 20) + " " + esc(near.label) + " · " + window.XinxuMood.strengthLabel(e.v, e.a) +
         (e.note ? "　" + esc(e.note) : "") + "</span></div>";
     }
     html += '<div class="prow">' +

@@ -191,7 +191,9 @@
   .log{display:flex;flex-direction:column}
   .entry{display:flex;gap:14px;padding:14px 2px;border-bottom:1px solid var(--line)}
   .entry:last-child{border-bottom:none}
-  .entry .em{font-size:1.5rem;line-height:1;width:34px;flex-shrink:0;text-align:center}
+  .entry .em{line-height:1;width:34px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center}
+  .entry .em .xm-ico{vertical-align:0}
   .entry .bd{flex:1;min-width:0}
   .entry .top{display:flex;align-items:baseline;gap:10px}
   .entry .ml{font-family:var(--serif);font-weight:600}
@@ -441,7 +443,7 @@
     $("#sky").style.background=""; $("#blobA").style.background="";
     $("#padCare").textContent = M.careOf(0.5,0.5);
     const m = M.nearest(entry.v, entry.a);
-    toast("已记下 · "+m.e+" "+m.label+"，今天也辛苦了");
+    toast("已记下 · "+m.label+"，今天也辛苦了");
     window.scrollTo({top:0,behavior:"smooth"});
 
     /* 安全层吃的是情绪模型。这两个参数都换算回旧的 1–5 量纲，
@@ -514,7 +516,7 @@
       const m=M.nearest(e.v,e.a);
       const tags=(e.tags||[]).map(t=>"<span>"+esc(t)+"</span>").join("");
       html+='<div class="dayrow"><div class="drtop"><span class="dt2">'+M.hmOf(e.ts)+'</span>'+
-        '<span class="dm" style="color:'+m.c+'">'+m.e+' '+m.label+'</span>'+
+        '<span class="dm" style="color:'+m.c+'">'+M.icon(m.key)+' '+m.label+'</span>'+
         '<span class="ds2">'+M.strengthLabel(e.v,e.a)+'</span>'+
         (e.from==="sandbox"?'<span class="src">沙盘</span>':'')+
         (e.from==="agent"?'<span class="src">对话</span>':'')+'</div>'+
@@ -716,7 +718,7 @@
         : e.from==="agent"
         ? '<span class="src">记于对话 · '+M.hmOf(e.ts)+'</span>'
         : '<span class="dt">'+e.date+' '+M.hmOf(e.ts)+' · '+M.strengthLabel(e.v,e.a)+'</span>';
-      return '<div class="entry"><div class="em">'+m.e+'</div><div class="bd">'+
+      return '<div class="entry"><div class="em">'+M.icon(m.key, 30)+'</div><div class="bd">'+
         '<div class="top"><span class="ml" style="color:'+m.c+'">'+m.label+'</span>'+
         meta+
         '<button class="del" data-i="'+i+'" aria-label="删除">✕</button></div>'+

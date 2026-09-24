@@ -25,14 +25,79 @@
   /* 坐标是略带风格化的：焦虑与生气同属「低效价 + 高唤醒」，难过与疲惫
      同属「低效价 + 低唤醒」，纯靠这两维分不开。靠颜色和名字补足那点
      区分度。这是环形模型的固有局限，不是偷懒。 */
+  /* v 值有一条硬约束：低谷阈值是 legacyVal(v)=1+4v ≤ 2，也就是 v ≤ 0.25。
+     焦虑/难过/生气必须留在这条线以下，否则安全层的连续低谷判定会变。
+     改这几个数之前先跑一遍 src/mood.js 顶部说的等价性测试。
+     a 值可以随便调，只影响纵向分布。 */
   var ANCHORS = [
-    { key: 'happy',   label: '开心', w: '晴',   e: '☀️', c: '#F2C94C', v: 0.86, a: 0.78 },
-    { key: 'calm',    label: '平静', w: '微风', e: '🌤️', c: '#7FB8E6', v: 0.78, a: 0.20 },
-    { key: 'anxious', label: '焦虑', w: '阵雨', e: '🌦️', c: '#E88C5A', v: 0.22, a: 0.80 },
-    { key: 'tired',   label: '疲惫', w: '阴',   e: '☁️', c: '#8E8AA6', v: 0.40, a: 0.16 },
-    { key: 'sad',     label: '难过', w: '雨',   e: '🌧️', c: '#6E8FD9', v: 0.15, a: 0.30 },
-    { key: 'angry',   label: '生气', w: '雷雨', e: '⛈️', c: '#E07A6B', v: 0.12, a: 0.88 },
+    { key: 'happy',   label: '开心', w: '晴',   c: '#F2C94C', v: 0.86, a: 0.78 },
+    { key: 'calm',    label: '平静', w: '微风', c: '#7FB8E6', v: 0.78, a: 0.20 },
+    { key: 'anxious', label: '焦虑', w: '阵雨', c: '#E88C5A', v: 0.24, a: 0.70 },
+    { key: 'tired',   label: '疲惫', w: '阴',   c: '#8E8AA6', v: 0.40, a: 0.16 },
+    { key: 'sad',     label: '难过', w: '雨',   c: '#6E8FD9', v: 0.15, a: 0.30 },
+    { key: 'angry',   label: '生气', w: '雷雨', c: '#E07A6B', v: 0.08, a: 0.90 },
   ];
+
+  /* ---------- 图标 ---------- */
+  /* 手绘 SVG，不是 emoji。emoji 在 Windows / macOS / Android 上长得都不一样，
+     而且跟沙盘那套手绘沙具是两个体系，摆在一起很突兀。
+     全部用 currentColor，颜色由锚点自己的 c 给。 */
+  var ICONS = {
+    // 晴：圆太阳 + 八道短光
+    happy:
+      '<circle cx="32" cy="32" r="13" fill="currentColor"/>' +
+      '<g stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none">' +
+      '<path d="M32 6v8M32 50v8M6 32h8M50 32h8"/>' +
+      '<path d="M13.5 13.5l5.7 5.7M44.8 44.8l5.7 5.7M50.5 13.5l-5.7 5.7M19.2 44.8l-5.7 5.7"/></g>',
+    // 微风：太阳半躲在云后
+    calm:
+      '<circle cx="43" cy="21" r="11" fill="currentColor" opacity=".75"/>' +
+      '<circle cx="19" cy="42" r="11" fill="currentColor"/>' +
+      '<circle cx="33" cy="36" r="15" fill="currentColor"/>' +
+      '<circle cx="47" cy="43" r="10" fill="currentColor"/>' +
+      '<rect x="8" y="40" width="48" height="14" rx="7" fill="currentColor"/>',
+    // 阵雨：云 + 小雨点 + 露一点太阳
+    anxious:
+      '<circle cx="45" cy="18" r="9" fill="currentColor" opacity=".75"/>' +
+      '<circle cx="19" cy="34" r="11" fill="currentColor"/>' +
+      '<circle cx="32" cy="28" r="14" fill="currentColor"/>' +
+      '<circle cx="45" cy="35" r="10" fill="currentColor"/>' +
+      '<rect x="8" y="32" width="48" height="14" rx="7" fill="currentColor"/>' +
+      '<g stroke="currentColor" stroke-width="4.5" stroke-linecap="round">' +
+      '<path d="M20 52v5M32 52v7M44 52v5"/></g>',
+    // 阴：一朵圆云
+    tired:
+      '<circle cx="19" cy="34" r="11" fill="currentColor"/>' +
+      '<circle cx="32" cy="28" r="15" fill="currentColor"/>' +
+      '<circle cx="45" cy="35" r="10" fill="currentColor"/>' +
+      '<rect x="8" y="32" width="48" height="14" rx="7" fill="currentColor"/>',
+    // 雨：云 + 密雨点
+    sad:
+      '<circle cx="19" cy="28" r="11" fill="currentColor"/>' +
+      '<circle cx="32" cy="22" r="15" fill="currentColor"/>' +
+      '<circle cx="45" cy="29" r="10" fill="currentColor"/>' +
+      '<rect x="8" y="26" width="48" height="14" rx="7" fill="currentColor"/>' +
+      '<g stroke="currentColor" stroke-width="4.5" stroke-linecap="round">' +
+      '<path d="M16 46v6M26 48v8M37 48v8M47 46v6"/></g>',
+    // 雷雨：云 + 闪电
+    angry:
+      '<circle cx="19" cy="27" r="11" fill="currentColor"/>' +
+      '<circle cx="32" cy="21" r="15" fill="currentColor"/>' +
+      '<circle cx="45" cy="28" r="10" fill="currentColor"/>' +
+      '<rect x="8" y="25" width="48" height="14" rx="7" fill="currentColor"/>' +
+      '<path d="M35 42L24 56h7l-3 10 12-15h-7z" fill="currentColor"/>',
+  };
+
+  /* 尺寸走行内样式，不用 width/height 属性——CSS 里的规则会盖掉属性，
+     之前图标被压到 1.15em 就是栽在这上面。装饰（底盘、对齐）留给 CSS。 */
+  function icon(key, size) {
+    var m = byKey(key);
+    if (!m || !ICONS[key]) return '';
+    var n = size || 18;
+    return '<svg class="xm-ico" viewBox="0 0 64 64" aria-hidden="true"' +
+           ' style="color:' + m.c + ';width:' + n + 'px;height:' + n + 'px">' +
+           ICONS[key] + '</svg>';
+  }
 
   /* 旧 intensity(1–5) 迁移时的收敛系数：只作用在唤醒度上。
      效价绝不能跟着收缩——若那样，把「焦虑·强度3」往中心拉会得到
@@ -195,17 +260,22 @@
       '.xm-axis.r{right:7px;top:50%;transform:translateY(-50%)}',
 
       '.xm-pa{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);',
-      'display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 7px;',
-      'border:1px solid transparent;border-radius:12px;background:transparent;cursor:pointer;',
-      'font-family:inherit;font-size:.62rem;color:rgba(241,236,225,.86);transition:.15s;',
-      'text-shadow:0 1px 3px rgba(0,0,0,.7);backdrop-filter:blur(1px)}',
-      '.xm-pa:hover{background:rgba(34,29,54,.55);border-color:rgba(241,236,225,.28)}',
-      '.xm-pa em{font-style:normal;font-size:1.05rem;line-height:1}',
+      'display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 9px;',
+      'border:1px solid transparent;border-radius:14px;background:transparent;cursor:pointer;',
+      'font-family:inherit;font-size:.64rem;color:rgba(241,236,225,.9);transition:.15s;',
+      'text-shadow:0 1px 3px rgba(0,0,0,.75);letter-spacing:.5px}',
+      '.xm-pa:hover{background:rgba(34,29,54,.62);border-color:rgba(241,236,225,.3)}',
+      '.xm-ico{display:inline-block;vertical-align:-.18em}',
+      /* 深色圆底盘。没有它的话，开心那个琥珀色太阳压在琥珀色背景上
+         几乎看不见——同色相碰必然低对比。顺带也让锚点更像可点的按钮。 */
+      '.xm-pa .xm-ico{display:block;padding:7px;border-radius:50%;',
+      'background:rgba(28,22,44,.62);box-sizing:content-box;',
+      'box-shadow:0 2px 7px rgba(8,5,18,.5),inset 0 1px 0 rgba(255,255,255,.07)}',
+      '.xm-compact .xm-pa .xm-ico{padding:5px}',
       /* 紧凑模式（模态里的窄面板）：只留图标。锚点之间本来就近，
-         在 250px 见方的面板里文字标签会互相压住。读数行仍然会报出名字。 */
+         在窄面板里文字标签会互相压住。读数行仍然会报出名字。 */
       '.xm-compact .xm-pa span{display:none}',
-      '.xm-compact .xm-pa{padding:4px;border-radius:10px}',
-      '.xm-compact .xm-pa em{font-size:1.15rem}',
+      '.xm-compact .xm-pa{padding:5px;border-radius:12px}',
       '.xm-pa[aria-pressed="true"]{background:rgba(34,29,54,.72);border-color:var(--c);color:#F1ECE1}',
       '.xm-pa:focus-visible{outline:2px solid #F0B36A;outline-offset:2px}',
 
@@ -262,7 +332,7 @@
       b.style.setProperty('--x', (m.v * 100) + '%');
       b.style.setProperty('--y', ((1 - m.a) * 100) + '%');
       b.style.setProperty('--c', m.c);
-      b.innerHTML = '<em>' + m.e + '</em><span>' + m.label + '</span>';
+      b.innerHTML = icon(m.key, 24) + '<span>' + m.label + '</span>';
       b.onclick = function (e) { e.preventDefault(); set(m.v, m.a, true); };
       field.appendChild(b);
     });
@@ -287,7 +357,7 @@
       dot.style.setProperty('--x', (state.v * 100) + '%');
       dot.style.setProperty('--y', ((1 - state.a) * 100) + '%');
       dot.style.setProperty('--c', m.c);
-      elN.textContent = state.on ? m.e + ' ' + m.label : '还没定位';
+      elN.innerHTML = state.on ? icon(m.key, 18) + ' ' + m.label : '还没定位';
       elN.style.color = state.on ? m.c : 'var(--muted)';
       elS.textContent = state.on ? strengthLabel(state.v, state.a) : '';
       elI.style.width = (dist(state.v, state.a) / MAXD * 100) + '%';
@@ -336,6 +406,7 @@
     ANCHORS: ANCHORS,
     CENTER: CENTER,
     byKey: byKey,
+    icon: icon,
     nearest: nearest,
     colorOf: colorOf,
     careOf: careOf,

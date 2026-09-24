@@ -130,6 +130,33 @@
 
   /* ---------- 第一步 · 登录 ---------- */
 
+  /* 口令只在「进入程序」时问一次。
+     之前是每次加载页面都问——从首页点进沙盘、再点进对话，每换一次页面
+     就要重输一次，像是每隔五分钟被门卫拦一回。
+
+     用带时效的 localStorage 而不是 sessionStorage：后者不跨标签页，
+     新开一个标签又会问一遍。12 小时够覆盖一次连续使用，
+     也不会把「已解锁」永久留在机器上。
+
+     顺带说清：这不降低任何实际安全性。这个口令本来就不是防护——
+     vault.js 顶部自己写了「指望它保护数据是不现实的」。它的作用是
+     归属感，不是门锁。既然是归属感，就不该让人每换一页就重新证明一次。 */
+  var UNLOCK_KEY = 'xinxu.unlocked.v1';
+  var UNLOCK_TTL = 12 * 3600 * 1000;
+
+  function unlocked() {
+    try {
+      var t = Number(global.localStorage.getItem(UNLOCK_KEY) || 0);
+      return t > 0 && (Date.now() - t) < UNLOCK_TTL;
+    } catch (e) { return false; }
+  }
+  function markUnlocked() {
+    try { global.localStorage.setItem(UNLOCK_KEY, String(Date.now())); } catch (e) {}
+  }
+  function clearUnlocked() {
+    try { global.localStorage.removeItem(UNLOCK_KEY); } catch (e) {}
+  }
+
   function renderUnlockStep(done) {
     var acct = V.getAccount();
     var wrap = el('div', 'xo-step');
@@ -157,6 +184,7 @@
       V.login(acct.nickname, pass.value).then(function (res) {
         go.disabled = false;
         if (!res.ok) { err.textContent = res.error; err.hidden = false; pass.select(); return; }
+        markUnlocked();
         done();
       });
     }
@@ -200,6 +228,7 @@
     cancel.onclick = function () { box.remove(); };
     wipe.onclick = function () {
       V.clearAll();
+      clearUnlocked();   // 数据没了，解锁状态也不该留着
       if (onConfirm) onConfirm();
       else global.location.reload();   // 回到干净的引导流程
     };
@@ -297,9 +326,12 @@
     var firstRun = !V.hasConsented();
     var steps = [];
 
-    steps.push(V.hasAccount()
-      ? { render: renderUnlockStep }
-      : { render: renderRegisterStep });
+    /* 换页面不等于重新进门。已解锁就什么都不加，mount() 会直接把内容放出来。 */
+    if (!V.hasAccount()) {
+      steps.push({ render: renderRegisterStep });
+    } else if (!unlocked()) {
+      steps.push({ render: renderUnlockStep });
+    }
 
     // 联系人只在第一次问一遍。跳过就不再追问——反复要人交联系方式
     // 本身就是一种压力，而未填的提醒交给「安全与支持」面板去做。
