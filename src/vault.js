@@ -183,7 +183,9 @@
      就名不副实，而用户是照着这句话做的决定。
      新增存储键时记得回来补进这张表。 */
   var OWNED_ELSEWHERE = [
-    'xinxu.entries.v1',           // 情绪日记
+    'xinxu.entries.v2',           // 情绪日记（连续价值）
+    'xinxu.entries.v1',           // 情绪日记的旧格式。只是迁移时的备份，不是「另一个数据」——
+                                  // 用户点清除全部数据时，留着它等于把日记偷偷留了一份。
     'xinxu.sandbox.draft.v1',     // 沙盘草稿
     'xinxu.sandbox.scenes.v1',    // 沙盘存档
     'xinxu.sandbox.marks.v1'      // 沙盘见证

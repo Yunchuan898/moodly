@@ -83,32 +83,12 @@
     line-height:1.35;letter-spacing:1px}
   .sub{color:var(--muted);margin-top:10px;max-width:44ch}
 
-  .moods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}
-  @media(min-width:520px){.moods{grid-template-columns:repeat(6,1fr)}}
-  .mood{position:relative;border:1px solid var(--line);background:var(--ink2);
-    border-radius:var(--r-md);padding:16px 8px 13px;cursor:pointer;text-align:center;
-    transition:transform .15s ease,border-color .2s ease,background .2s ease}
-  .mood:hover{transform:translateY(-2px);border-color:var(--faint)}
-  .mood .e{font-size:1.7rem;line-height:1;display:block;filter:saturate(.9)}
-  .mood .n{display:block;margin-top:9px;font-size:.86rem;font-family:var(--serif);font-weight:600}
-  .mood .w{display:block;font-size:.68rem;color:var(--muted);margin-top:1px}
-  .mood .dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;
-    background:var(--c,transparent);opacity:0;transition:opacity .2s}
-  .mood[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,var(--ink2));
-    box-shadow:0 0 0 1px var(--c) inset}
-  .mood[aria-pressed="true"] .dot{opacity:1}
+  /* 打卡平面由 src/mood.js 注入样式，这里不再需要六宫格的规则 */
 
   .panel{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-lg);
     padding:18px 18px 20px;margin-top:22px}
   .label{font-size:.78rem;color:var(--muted);margin-bottom:12px;letter-spacing:.3px}
   .label b{color:var(--paper);font-weight:500}
-
-  /* 强度滑杆 */
-  .inten input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:99px;
-    background:linear-gradient(90deg,var(--lamp) var(--fill,40%),var(--line) var(--fill,40%));outline:none}
-  .inten input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-    background:var(--paper);border:2px solid var(--lamp);cursor:pointer}
-  .inten .ticks{display:flex;justify-content:space-between;color:var(--faint);font-size:.68rem;margin-top:8px}
 
   /* 触发标签 */
   .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
@@ -128,6 +108,25 @@
   .save:active{transform:translateY(1px)}
   .save:hover{filter:brightness(1.05)}
 
+  .padcare{font-size:.84rem;color:var(--muted);margin-top:4px;line-height:1.7;min-height:1.6em}
+  .spark .cap .lg{display:inline-block;width:9px;height:3px;border-radius:2px;margin:0 5px 0 0;
+    vertical-align:middle}
+  .spark .cap .lg.v{background:#F0B36A}
+  .spark .cap .lg.a{background:#A78BFA;margin-left:14px}
+  .spark .cap #sparkWin{color:var(--faint)}
+  .dayrow{padding:9px 0;border-top:1px solid var(--line)}
+  .dayrow:first-of-type{border-top:none}
+  .drtop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .dayrow .dt2{font-size:.72rem;color:var(--faint);font-variant-numeric:tabular-nums}
+  .dayrow .dm{font-family:var(--serif);font-weight:600;font-size:.9rem}
+  .dayrow .ds2{font-size:.68rem;color:var(--muted)}
+  .dayrow .nt{margin-top:5px;font-size:.84rem;color:var(--paper);white-space:pre-wrap}
+  .dayrow .ts{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .dayrow .ts span{font-size:.66rem;color:var(--lilac);border:1px solid var(--line);
+    padding:1px 7px;border-radius:99px}
+  .dayrow .src{font-size:.64rem;color:var(--lilac);padding:1px 7px;border-radius:99px;
+    border:1px solid color-mix(in srgb,var(--lilac) 38%,var(--line))}
+
   /* ---- 分区标题 ---- */
   .sec{margin-top:46px}
   .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
@@ -140,19 +139,20 @@
     background:var(--ink2);display:flex;flex-direction:column;align-items:center;justify-content:center;
     cursor:pointer;transition:.15s;color:var(--muted);font-size:.72rem}
   .cell .d{line-height:1}
-  .cell .bar{position:absolute;left:3px;right:3px;bottom:3px;height:4px;border-radius:3px;
-    background:var(--c,transparent);opacity:0;transition:opacity .2s}
-  .cell[data-mood]{border-color:color-mix(in srgb,var(--c) 55%,var(--line));background:color-mix(in srgb,var(--c) 12%,var(--ink2))}
-  .cell[data-mood] .bar{opacity:1}
-  .cell[data-mood] .d{color:var(--paper);font-weight:600}
+  /* 一天可能采样多次，每条一个小点，按时间从左到右排 */
+  .cell .bars{position:absolute;left:3px;right:3px;bottom:4px;display:flex;gap:2px;justify-content:center}
+  .cell .bars i{width:4px;height:4px;border-radius:50%;background:var(--c,#3B3358);flex:0 0 auto}
+  .cell[data-has]{border-color:color-mix(in srgb,var(--c) 50%,var(--line));background:color-mix(in srgb,var(--c) 11%,var(--ink2))}
+  .cell[data-has] .d{color:var(--paper);font-weight:600}
   .cell.today{box-shadow:0 0 0 2px var(--paper) inset}
   .cell.off{opacity:.28}
 
-  .trend-wrap{display:flex;gap:22px;align-items:flex-end;margin-top:20px;flex-wrap:wrap}
-  .spark{flex:1 1 220px;min-width:200px}
+  .trend-wrap{margin-top:20px}
+  .spark{width:100%}
   .spark .cap{font-size:.74rem;color:var(--faint);margin-bottom:8px}
-  .spark svg{width:100%;height:120px;display:block}
-  .day-detail{flex:0 0 220px;background:var(--ink3);border:1px solid var(--line);border-radius:var(--r-md);padding:14px}
+  .spark svg{width:100%;height:130px;display:block}
+  .day-detail{margin-top:18px;background:var(--ink3);border:1px solid var(--line);
+    border-radius:var(--r-md);padding:14px 16px}
   .day-detail .when{font-size:.74rem;color:var(--faint)}
   .day-detail .mo{font-family:var(--serif);font-weight:700;font-size:1.1rem;margin-top:2px}
   .day-detail .nt{margin-top:8px;font-size:.86rem;color:var(--paper);white-space:pre-wrap}
@@ -277,12 +277,10 @@
       <h1 class="h1" id="h1">此刻，你的心情是什么天气？</h1>
       <p class="sub">把情绪记成天气，好天气会留下，坏天气只是路过。</p>
 
-      <div class="moods" id="moods" role="radiogroup" aria-label="选择心情"></div>
-
-      <div class="panel inten">
-        <div class="label"><b>情绪有多强烈？</b>　轻轻的一点 —— 很强烈</div>
-        <input type="range" id="intensity" min="1" max="5" step="1" value="3" aria-label="情绪强度" />
-        <div class="ticks"><span>轻</span><span>中</span><span>强</span></div>
+      <div class="panel">
+        <div class="label"><b>此刻你在哪里？</b>　点一下，或者拖到你觉得对的位置</div>
+        <div id="pad"></div>
+        <p class="padcare" id="padCare"></p>
       </div>
 
       <div class="panel">
@@ -303,7 +301,7 @@
       <div class="sec-head"><h2 class="h2" id="h-trend">最近 14 天的心情天气</h2><span class="hint">点一天查看</span></div>
       <div class="cal" id="cal"></div>
       <div class="trend-wrap">
-        <div class="spark"><div class="cap">情绪指数走势（越高越晴朗）</div><svg id="spark" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+        <div class="spark"><div class="cap"><i class="lg v"></i>效价<i class="lg a"></i>唤醒度<span id="sparkWin"></span></div><svg id="spark" viewBox="0 0 700 130" preserveAspectRatio="none" aria-hidden="true"></svg></div>
         <div class="day-detail" id="dayDetail"><div class="when">选择一天查看记录</div></div>
       </div>
     </section>
@@ -344,73 +342,69 @@
 
   <div class="toast" id="toast"></div>
 
+<!-- 情绪模型：打卡平面、锚点、v1→v2 迁移。sandbox.html 引的是同一份，避免两边漂移 -->
+<script src="src/mood.js"></script>
 <script>
 (function(){
   "use strict";
   const $ = s => document.querySelector(s);
-  const KEY = "xinxu.entries.v1";
-
-  const MOODS = [
-    {key:"happy",  label:"开心", w:"晴",   e:"☀️", c:"#F2C94C", val:5,   care:"给自己一点小奖励，把开心也记下来"},
-    {key:"calm",   label:"平静", w:"微风", e:"🌤️", c:"#7FB8E6", val:4,   care:"平静很好，趁此刻做点想做的事"},
-    {key:"anxious",label:"焦虑", w:"阵雨", e:"🌦️", c:"#E88C5A", val:2,   care:"先慢下来，做一轮呼吸让雨停一停"},
-    {key:"tired",  label:"疲惫", w:"阴",   e:"☁️", c:"#8E8AA6", val:3,   care:"允许自己休息，缓一缓不是偷懒"},
-    {key:"sad",    label:"难过", w:"雨",   e:"🌧️", c:"#6E8FD9", val:1.5, care:"难过会过去，像雨一样，先抱抱自己"},
-    {key:"angry",  label:"生气", w:"雷雨", e:"⛈️", c:"#E07A6B", val:1,   care:"给情绪一个出口，先深呼吸十次"},
-  ];
+  const M = window.XinxuMood;
   const TAGS = ["学业","工作","人际关系","家庭","睡眠","健康","金钱","独处"];
-  const byKey = k => MOODS.find(m=>m.key===k);
 
   let entries = [];
-  try{ entries = JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ entries=[]; }
-  if(!Array.isArray(entries)) entries=[];
-
-  let selMood = null;
+  let pad = null;
   const state = { breathing:false, running:false, noise:false };
 
   /* ---------- 工具 ---------- */
-  const pad = n => String(n).padStart(2,"0");
-  const dstr = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const pad2 = n => String(n).padStart(2,"0");
+  const dstr = d => d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
   const todayStr = dstr(new Date());
   function lastNDays(n){ const a=[]; for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); a.push(d);} return a; }
   function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show");
     clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"), 2200); }
-
-  /* ---------- 日期 & 连续 ---------- */
-  const wd = ["日","一","二","三","四","五","六"];
-  function setHeader(){
-    const d=new Date();
-    $("#todayStr").textContent = (d.getMonth()+1)+"月"+d.getDate()+"日 · 周"+wd[d.getDay()];
-    // 连续天数
-    let s=0, c=new Date();
-    const set=new Set(entries.map(e=>e.date));
-    while(set.has(dstr(c))){ s++; c.setDate(c.getDate()-1); }
-    $("#streak").textContent = s>0 ? ("🔥 连续记录 "+s+" 天") : "今天还没记录心情";
-  }
-
-  /* ---------- 心情选择 ---------- */
-  function renderMoods(){
-    const g=$("#moods"); g.innerHTML="";
-    MOODS.forEach(m=>{
-      const b=document.createElement("button");
-      b.type="button"; b.className="mood"; b.setAttribute("role","radio");
-      b.setAttribute("aria-pressed","false"); b.setAttribute("aria-label",m.label);
-      b.style.setProperty("--c",m.c);
-      b.innerHTML='<span class="dot"></span><span class="e">'+m.e+'</span><span class="n">'+m.label+'</span><span class="w">'+m.w+'</span>';
-      b.onclick=()=>{ selMood=m.key; document.querySelectorAll(".mood").forEach(x=>x.setAttribute("aria-pressed","false"));
-        b.setAttribute("aria-pressed","true"); tintSky(m.c); };
-      g.appendChild(b);
-    });
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function mix(hex,hex2,t){
+    const p=c=>parseInt(c,16); const a=[p(hex.slice(1,3)),p(hex.slice(3,5)),p(hex.slice(5,7))];
+    const b=[p(hex2.slice(1,3)),p(hex2.slice(3,5)),p(hex2.slice(5,7))];
+    const r=a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+    return "rgb("+r[0]+","+r[1]+","+r[2]+")";
   }
   function tintSky(c){
     $("#sky").style.background="radial-gradient(120% 90% at 50% -10%, "+mix(c,"#34294f",.5)+" 0%, var(--ink) 58%)";
     $("#blobA").style.background=c;
   }
-  function mix(hex,hex2,t){ // hex -> rgb 混合
-    const p=c=>parseInt(c,16); const a=[p(hex.slice(1,3)),p(hex.slice(3,5)),p(hex.slice(5,7))];
-    const b=[p(hex2.slice(1,3)),p(hex2.slice(3,5)),p(hex2.slice(5,7))];
-    const r=a.map((x,i)=>Math.round(x+(b[i]-x)*t));
-    return "rgb("+r[0]+","+r[1]+","+r[2]+")";
+
+  /* ---------- 读取与迁移 ---------- */
+  /* 实现在 src/mood.js，和沙盘共用一份——不管先打开哪个页面，迁移都能跑对 */
+  function loadEntries(){
+    const r = M.loadEntries();
+    entries = r.entries;
+    if(r.migrated) setTimeout(()=>toast("已把 "+r.migrated+" 条旧记录迁到新的情绪坐标"), 1200);
+  }
+  function persist(){ M.saveEntries(entries); }
+
+  /* ---------- 顶栏 ---------- */
+  const wd = ["日","一","二","三","四","五","六"];
+  function setHeader(){
+    const d=new Date();
+    $("#todayStr").textContent = (d.getMonth()+1)+"月"+d.getDate()+"日 · 周"+wd[d.getDay()];
+    let s=0, c=new Date();
+    const set=new Set(entries.map(e=>e.date));
+    while(set.has(dstr(c))){ s++; c.setDate(c.getDate()-1); }
+    const today = set.has(todayStr) ? entries.filter(e=>e.date===todayStr).length : 0;
+    $("#streak").textContent = s>0
+      ? ("🔥 连续记录 "+s+" 天" + (today>1 ? " · 今天已记 "+today+" 次" : ""))
+      : "今天还没记录心情";
+  }
+
+  /* ---------- 打卡平面 ---------- */
+  function initPad(){
+    pad = M.Pad($("#pad"), {
+      onChange: function(v,a){
+        $("#padCare").textContent = M.careOf(v,a);
+        tintSky(M.colorOf(v,a));
+      }
+    });
   }
 
   /* ---------- 标签 ---------- */
@@ -424,93 +418,149 @@
     });
   }
 
-  /* ---------- 滑杆 ---------- */
-  function renderIntensity(){
-    const r=$("#intensity");
-    const upd=()=> r.style.setProperty("--fill",((r.value-1)/4*100)+"%");
-    r.oninput=upd; upd();
-  }
-
   /* ---------- 保存 ---------- */
   function save(){
-    if(!selMood){ toast("先选一个此刻的心情 ☀️"); document.querySelector(".mood")?.focus(); return; }
+    if(!pad || !pad.touched()){ toast("先在平面上点一下此刻的位置"); return; }
+    const p = pad.get();
     const tags=[...document.querySelectorAll(".tag[aria-pressed=true]")].map(b=>b.textContent);
-    const entry={ id:Date.now(), date:todayStr, mood:selMood,
-      intensity:+$("#intensity").value, note:$("#note").value.trim(), tags };
-    // 同一天覆盖。沙盘留下的那条不动——它记的是另一回事，不该被顺手擦掉。
-    entries=entries.filter(e=>e.date!==todayStr || e.from==="sandbox");
+    const now = Date.now();
+    const entry = {
+      id: now, ts: now, date: M.ymdOf(now),
+      v: +p.v.toFixed(4), a: +p.a.toFixed(4),
+      note: $("#note").value.trim(), tags
+    };
+    // 一天可以记多条，不再覆盖
     entries.unshift(entry);
+    entries.sort((x,y)=>(y.ts||0)-(x.ts||0));
     persist(); renderAll();
-    // 复位
-    selMood=null; $("#note").value=""; $("#intensity").value=3; renderIntensity();
-    document.querySelectorAll(".mood").forEach(x=>x.setAttribute("aria-pressed","false"));
+
+    pad.reset(); $("#note").value = "";
     document.querySelectorAll(".tag").forEach(x=>x.setAttribute("aria-pressed","false"));
     $("#sky").style.background=""; $("#blobA").style.background="";
-    const m=byKey(entry.mood);
+    $("#padCare").textContent = M.careOf(0.5,0.5);
+    const m = M.nearest(entry.v, entry.a);
     toast("已记下 · "+m.e+" "+m.label+"，今天也辛苦了");
     window.scrollTo({top:0,behavior:"smooth"});
-    // 安全识别只在本地跑，命中才弹一句提醒。绝不会替用户联系任何人。
+
+    /* 安全层吃的是情绪模型。这两个参数都换算回旧的 1–5 量纲，
+       阈值不必改，低谷判定行为与旧模型逐条相同。详见 src/mood.js 顶部。 */
     if(window.XinxuSafety){
       XinxuSafety.check(entry,{
-        intensity:entry.intensity,
-        lowStreak:XinxuSafety.lowStreak(entries,{
-          from:todayStr,
-          valueOf:e=>{ const mm=byKey(e.mood); return mm?mm.val:99; }
+        intensity: M.intensity(entry.v, entry.a),
+        lowStreak: XinxuSafety.lowStreak(entries,{
+          from: entry.date,
+          valueOf: e => M.legacyVal(e.v)
         })
       });
     }
   }
-  function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(entries)); }catch(e){} }
 
-  /* ---------- 趋势 ---------- */
+  /* ---------- 日历 ---------- */
   function renderCal(){
-    const days=lastNDays(14); const map={}; entries.forEach(e=>map[e.date]=e);
+    const days=lastNDays(14);
+    const byDate={};
+    entries.forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(e); });
     const g=$("#cal"); g.innerHTML="";
     days.forEach(d=>{
-      const ds=dstr(d); const e=map[ds];
-      const c=document.createElement("div"); c.className="cell"+(ds===todayStr?" today":"");
-      c.innerHTML='<span class="d">'+d.getDate()+'</span><span class="bar"></span>';
-      if(e){ const m=byKey(e.mood); c.setAttribute("data-mood",e.mood); c.style.setProperty("--c",m.c);
-        c.title=m.e+" "+m.label; }
+      const ds=dstr(d);
+      const list=(byDate[ds]||[]).slice().sort((a,b)=>a.ts-b.ts);
+      const c=document.createElement("div");
+      c.className="cell"+(ds===todayStr?" today":"");
+      // 一天最多画 5 个点，多了也塞不下
+      const dots=list.slice(0,5).map(e=>'<i style="--c:'+M.colorOf(e.v,e.a)+'"></i>').join("");
+      c.innerHTML='<span class="d">'+d.getDate()+'</span>'+(dots?'<span class="bars">'+dots+'</span>':'');
+      if(list.length){
+        const last=list[list.length-1];
+        c.setAttribute("data-has","1");
+        c.style.setProperty("--c", M.colorOf(last.v,last.a));
+        c.title = list.map(e=>M.hmOf(e.ts)).join(" · ");
+      }
       c.onclick=()=>showDay(ds);
       g.appendChild(c);
     });
   }
-  function showDay(ds){
-    const e=entries.find(x=>x.date===ds);
-    const el=$("#dayDetail");
-    if(!e){ el.innerHTML='<div class="when">'+ds+'</div><div class="mo" style="color:var(--muted)">没有记录</div>'; return; }
-    const m=byKey(e.mood);
-    const tags=(e.tags||[]).map(t=>"<span>"+t+"</span>").join("");
-    const how = e.from==="sandbox" ? '来自沙盘' : '强度 '+e.intensity+'/5';
-    el.innerHTML='<div class="when">'+ds+'</div>'+
-      '<div class="mo" style="color:'+m.c+'">'+m.e+" "+m.label+' · '+how+'</div>'+
-      (e.note?'<div class="nt">'+esc(e.note)+'</div>':'')+
-      (tags?'<div class="ts">'+tags+'</div>':'');
+
+  /* 一天的日内小图：横轴 00:00–24:00，纵轴效价 */
+  function intraday(list){
+    const W=200,H=46,padX=6,padT=6,padB=11;
+    const X=ts=>{ const d=new Date(ts); return padX + ((d.getHours()*60+d.getMinutes())/1440)*(W-2*padX); };
+    const Y=v=> H-padB - v*(H-padT-padB);
+    let o='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:46px;display:block;margin-top:10px">';
+    o+='<line x1="'+padX+'" y1="'+Y(0.5)+'" x2="'+(W-padX)+'" y2="'+Y(0.5)+'" stroke="#3B3358" stroke-width="1" stroke-dasharray="3 3"/>';
+    [0,6,12,18,24].forEach(hh=>{
+      const x=padX+(hh/24)*(W-2*padX);
+      o+='<line x1="'+x+'" y1="'+(H-padB)+'" x2="'+x+'" y2="'+(H-padB+3)+'" stroke="#3B3358" stroke-width="1"/>';
+      if(hh%12===0) o+='<text x="'+x+'" y="'+H+'" fill="#6E6786" font-size="7" text-anchor="middle" font-family="system-ui">'+hh+':00</text>';
+    });
+    if(list.length>1){
+      let d='M '+X(list[0].ts)+' '+Y(list[0].v);
+      for(let i=1;i<list.length;i++) d+=' L '+X(list[i].ts)+' '+Y(list[i].v);
+      o+='<path d="'+d+'" fill="none" stroke="#F0B36A" stroke-width="1.6" stroke-linecap="round"/>';
+    }
+    list.forEach(e=>{ o+='<circle cx="'+X(e.ts)+'" cy="'+Y(e.v)+'" r="2.8" fill="'+M.colorOf(e.v,e.a)+'" stroke="#221D36" stroke-width="1"/>'; });
+    return o+'</svg>';
   }
+
+  function showDay(ds){
+    const el=$("#dayDetail");
+    const list=entries.filter(x=>x.date===ds).sort((a,b)=>a.ts-b.ts);
+    if(!list.length){ el.innerHTML='<div class="when">'+ds+'</div><div class="mo" style="color:var(--muted)">没有记录</div>'; return; }
+
+    let html='<div class="when">'+ds+(list.length>1?' · '+list.length+' 次采样':'')+'</div>';
+    html+=intraday(list);
+    list.forEach(e=>{
+      const m=M.nearest(e.v,e.a);
+      const tags=(e.tags||[]).map(t=>"<span>"+esc(t)+"</span>").join("");
+      html+='<div class="dayrow"><div class="drtop"><span class="dt2">'+M.hmOf(e.ts)+'</span>'+
+        '<span class="dm" style="color:'+m.c+'">'+m.e+' '+m.label+'</span>'+
+        '<span class="ds2">'+M.strengthLabel(e.v,e.a)+'</span>'+
+        (e.from==="sandbox"?'<span class="src">沙盘</span>':'')+'</div>'+
+        (e.note?'<div class="nt">'+esc(e.note)+'</div>':'')+
+        (tags?'<div class="ts">'+tags+'</div>':'')+'</div>';
+    });
+    el.innerHTML=html;
+  }
+
+  /* ---------- 走势 ---------- */
+  /* 横轴是真实时间（14 天），不是「第几天」——一天记多条时，
+     只有真实时间轴才能把日内的起伏画出来。 */
   function renderSpark(){
-    const days=lastNDays(14); const map={}; entries.forEach(e=>map[e.date]=e);
-    const pts=days.map(d=> map[dstr(d)] ? byKey(map[dstr(d)].mood).val : null);
-    const svg=$("#spark"); const W=300,H=120,padX=8;
-    const ys=[1,2,3,4,5]; // 反转到越高越晴朗
-    function x(i){ return padX + i*(W-2*padX)/(13); }
-    function y(v){ return H-14 - (v-1)/4*(H-26); }
-    const valid=pts.map((v,i)=>v!=null?{x:x(i),y:y(v)}:null).filter(Boolean);
+    const svg=$("#spark"); const W=700,H=130,padX=8,padT=14,padB=20;
+    /* 窗口自适应。横轴是真实时间，固定 14 天的话，刚开始只记了三四天的
+       人所有点会挤在最右边一小条里，线也糊成一团。随着记录变多自动长到 14 天。 */
+    const now=Date.now();
+    let oldest=now;
+    entries.forEach(e=>{ if(e.ts && e.ts<oldest) oldest=e.ts; });
+    const days=Math.min(14, Math.max(2, Math.ceil((now-oldest)/86400000)+1));
+    const span=days*86400000, from=now-span;
+    const pts=entries.filter(e=>e.ts>=from).sort((a,b)=>a.ts-b.ts);
+    const winEl=$("#sparkWin");
+    if(winEl) winEl.textContent = days>=14 ? "　最近 14 天" : "　最近 "+days+" 天";
+    const X=ts=>padX+(ts-from)/span*(W-2*padX);
+    const Y=v=>H-padB-v*(H-padT-padB);
+
     let out='';
-    // 网格
-    ys.forEach(v=>{ out+='<line x1="'+padX+'" y1="'+y(v)+'" x2="'+(W-padX)+'" y2="'+y(v)+'" stroke="#3B3358" stroke-width="1" stroke-dasharray="3 4"/>'; });
-    // 折线
-    if(valid.length>1){
-      let path="M "+valid[0].x+" "+valid[0].y;
-      for(let i=1;i<valid.length;i++){ const p=valid[i],q=valid[i-1];
-        const mx=(p.x+q.x)/2; path+=" C "+mx+" "+q.y+" "+mx+" "+p.y+" "+p.x+" "+p.y; }
-      out+='<path d="'+path+'" fill="none" stroke="#F0B36A" stroke-width="2.5" stroke-linecap="round"/>';
-      // 面积
-      out+='<path d="'+path+' L '+valid[valid.length-1].x+' '+(H-14)+' L '+valid[0].x+' '+(H-14)+' Z" fill="url(#g)" opacity="0.18"/>';
-      out+='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0B36A"/><stop offset="1" stop-color="#F0B36A" stop-opacity="0"/></linearGradient></defs>';
-      valid.forEach(p=>{ out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="3.2" fill="#F1ECE1"/>'; });
-    } else {
-      out+='<text x="'+W/2+'" y="'+H/2+'" fill="#6E6786" font-size="12" text-anchor="middle" font-family="system-ui">记录几天后，这里会出现你的情绪曲线</text>';
+    [0,0.25,0.5,0.75,1].forEach(v=>{
+      out+='<line x1="'+padX+'" y1="'+Y(v)+'" x2="'+(W-padX)+'" y2="'+Y(v)+'" stroke="#3B3358" stroke-width="1" stroke-dasharray="3 4"/>';
+    });
+    out+='<line x1="'+padX+'" y1="'+Y(0.5)+'" x2="'+(W-padX)+'" y2="'+Y(0.5)+'" stroke="#4A4166" stroke-width="1"/>';
+
+    if(pts.length<2){
+      out+='<text x="'+(W/2)+'" y="'+(H/2+4)+'" fill="#6E6786" font-size="11" text-anchor="middle" font-family="system-ui">记录几次之后，这里会出现你的曲线</text>';
+      svg.innerHTML=out; return;
+    }
+    function line(get,color){
+      let d='M '+X(pts[0].ts)+' '+Y(get(pts[0]));
+      for(let i=1;i<pts.length;i++){
+        const p=pts[i], q=pts[i-1], mx=(X(p.ts)+X(q.ts))/2;
+        d+=' C '+mx+' '+Y(get(q))+' '+mx+' '+Y(get(p))+' '+X(p.ts)+' '+Y(get(p));
+      }
+      return '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round"/>';
+    }
+    out+=line(e=>e.v,"#F0B36A");
+    out+=line(e=>e.a,"#A78BFA");
+    if(pts.length<=40){
+      pts.forEach(e=>{ out+='<circle cx="'+X(e.ts)+'" cy="'+Y(e.v)+'" r="2.4" fill="#F0B36A" stroke="#221D36" stroke-width="1"/>'; });
     }
     svg.innerHTML=out;
   }
@@ -520,34 +570,51 @@
     const box=$("#insights");
     if(entries.length===0){ box.innerHTML='<div class="empty">还没有记录。写下第一条心情，我会帮你慢慢发现情绪的规律。</div>'; return; }
     const agg={};
-    entries.forEach(e=>{ (e.tags||[]).forEach(t=>{ if(!agg[t]) agg[t]={n:0,sum:0,low:0}; agg[t].n++; agg[t].sum+=byKey(e.mood).val; if(byKey(e.mood).val<3) agg[t].low++; }); });
+    entries.forEach(e=>{
+      (e.tags||[]).forEach(t=>{
+        if(!agg[t]) agg[t]={n:0,sumV:0,sumA:0,low:0};
+        agg[t].n++; agg[t].sumV+=e.v; agg[t].sumA+=e.a;
+        if(e.v<0.35) agg[t].low++;
+      });
+    });
     const list=Object.entries(agg).sort((a,b)=>b[1].n-a[1].n).slice(0,4);
     if(list.length===0){ box.innerHTML='<div class="empty">给心情加上触发标签，我就能帮你找到影响情绪的原因。</div>'; return; }
     const maxN=list[0][1].n;
     let html='<div class="ins-card">';
     list.forEach(([name,o])=>{
-      const avg=o.sum/o.n; const warm = avg>=3;
-      html+='<div class="trigger"><div><div class="tname">'+name+'</div>'+
+      const avgV=o.sumV/o.n, warm=avgV>=0.5;
+      html+='<div class="trigger"><div><div class="tname">'+esc(name)+'</div>'+
         '<div class="tmeta">出现 '+o.n+' 次 · '+(warm?"整体情绪较晴朗":"其中 "+o.low+" 次情绪偏低")+'</div></div>'+
         '<div class="tbar"><i style="width:'+(o.n/maxN*100)+'%;background:'+(warm?"var(--lilac)":"var(--c-anxious)")+'"></i></div></div>';
     });
     html+='</div>';
-    const low=[...list].sort((a,b)=> (a[1].sum/a[1].n) - (b[1].sum/b[1].n))[0];
+    const low=[...list].sort((a,b)=>(a[1].sumV/a[1].n)-(b[1].sumV/b[1].n))[0];
     if(low){
-      const name=low[0], avg=low[1].sum/low[1].n;
-      if(avg<3) html+='<div class="insight">过去这段时间，提到「<b>'+name+'</b>」时你的情绪常常偏低。下一次它出现前，先给自己一次 4·4·4·4 呼吸，给情绪留一点缓冲。</div>';
+      const name=low[0], avgV=low[1].sumV/low[1].n, avgA=low[1].sumA/low[1].n;
+      if(avgV<0.5){
+        const tail = avgA>=0.5 ? "情绪偏低、而且偏激活——像是绷着的状态。"
+                               : "情绪偏低、而且是低唤醒的——更像是耗尽了。";
+        html+='<div class="insight">过去这段时间，提到「<b>'+esc(name)+'</b>」时你的'+tail+
+              '下一次它出现前，先给自己一次 4·4·4·4 呼吸，给情绪留一点缓冲。</div>';
+      }
     }
     box.innerHTML=html;
   }
 
   /* ---------- 自我关怀 ---------- */
-  function currentMood(){ return selMood ? byKey(selMood) : (entries[0]? byKey(entries[0].mood) : byKey("calm")); }
+  function currentPoint(){
+    if(pad && pad.touched()) return pad.get();
+    const e = entries.find(x=>x.date===todayStr) || entries[0];
+    return e ? {v:e.v, a:e.a} : {v:0.5, a:0.5};
+  }
   function renderCare(){
-    const m=currentMood();
+    const p=currentPoint();
+    const m=M.nearest(p.v,p.a);
+    const personal = pad && pad.touched();
     const box=$("#care");
     const cards=[
       {ic:"🧘", t:"冥想 · 呼吸", gc:"#A78BFA", id:"careBreath", act:"开始呼吸",
-       p:"4·4·4·4 盒式呼吸，2 分钟让心跳慢下来。"+(selMood?"（适合"+m.label+"）":""), widget:""},
+       p:"4·4·4·4 盒式呼吸，2 分钟让心跳慢下来。"+(personal?"（适合"+m.label+"）":""), widget:""},
       {ic:"🏃", t:"运动 · 舒展", gc:"#7FB8E6", id:"careMove", act:"开始 1 分钟",
        p:"1 分钟微运动：站起来拉伸肩颈、转动手腕脚踝，让身体醒来。",
        widget:'<div class="move-prog" id="moveProg"><div class="ring"><b id="moveSecs">60</b></div><div class="step" id="moveStep">起身，慢慢地抬头、低头、左右转头</div></div>'},
@@ -639,11 +706,11 @@
     const box=$("#log"); $("#logCount").textContent=entries.length?("共 "+entries.length+" 条"):"";
     if(entries.length===0){ box.innerHTML='<div class="empty">日记本还是空的。回到顶部，写下今天的第一笔吧。</div>'; return; }
     box.innerHTML=entries.map((e,i)=>{
-      const m=byKey(e.mood);
-      const tags=(e.tags||[]).map(t=>"<span>"+t+"</span>").join("");
+      const m=M.nearest(e.v,e.a);
+      const tags=(e.tags||[]).map(t=>"<span>"+esc(t)+"</span>").join("");
       const meta = e.from==="sandbox"
         ? '<span class="src">来自沙盘'+(e.scene?' · 《'+esc(e.scene)+'》':'')+'</span>'
-        : '<span class="dt">'+e.date+' · 强度 '+e.intensity+'/5</span>';
+        : '<span class="dt">'+e.date+' '+M.hmOf(e.ts)+' · '+M.strengthLabel(e.v,e.a)+'</span>';
       return '<div class="entry"><div class="em">'+m.e+'</div><div class="bd">'+
         '<div class="top"><span class="ml" style="color:'+m.c+'">'+m.label+'</span>'+
         meta+
@@ -656,7 +723,6 @@
   }
 
   /* ---------- 杂项 ---------- */
-  function esc(s){ return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   function renderAll(){ setHeader(); renderCal(); renderSpark(); renderInsights(); renderCare(); renderLog(); }
 
   /* ---------- 事件 ---------- */
@@ -667,8 +733,12 @@
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeBreath(); });
 
   /* ---------- 启动 ---------- */
-  renderMoods(); renderTags(); renderIntensity(); renderAll();
+  loadEntries();
+  initPad();
+  renderTags();
+  renderAll();
   showDay(todayStr);
+  $("#padCare").textContent = M.careOf(0.5,0.5);
 })();
 </script>
 <!-- 顺序有依赖：onboarding 要用 vault，support 要用 onboarding 的须知渲染 -->
