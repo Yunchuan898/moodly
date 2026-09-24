@@ -4,7 +4,31 @@
   var W = global.XinxuWearables;
   var list = global.document.getElementById('devicePlatforms');
   var summary = global.document.getElementById('deviceSummary');
-  if (!W || !list || !summary) return;
+  var layer = global.document.getElementById('deviceLayer');
+  var opener = global.document.getElementById('openDevices');
+  var closer = global.document.getElementById('closeDevices');
+  if (!W || !list || !summary || !layer || !opener || !closer) return;
+
+  function open() {
+    render();
+    layer.hidden = false;
+    opener.setAttribute('aria-expanded', 'true');
+    closer.focus();
+  }
+  function close() {
+    layer.hidden = true;
+    opener.setAttribute('aria-expanded', 'false');
+    opener.focus();
+  }
+  opener.setAttribute('aria-haspopup', 'dialog');
+  opener.setAttribute('aria-controls', 'deviceLayer');
+  opener.setAttribute('aria-expanded', 'false');
+  opener.onclick = open;
+  closer.onclick = close;
+  layer.onclick = function (event) { if (event.target === layer) close(); };
+  global.document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !layer.hidden) close();
+  });
 
   function make(tag, cls, text) {
     var node = global.document.createElement(tag);
@@ -42,7 +66,7 @@
     summary.textContent = '';
     var rows = W.days(7);
     if (!rows.length) {
-      summary.appendChild(make('p', 'device-note', '还没有设备数据。上方可查看演示数据；正式授权接入仍在开发中。'));
+      summary.appendChild(make('p', 'device-note', '还没有设备数据。点右上角的设备图标，可以选择设备并查看演示数据。'));
       return;
     }
     var latest = rows[rows.length - 1];
@@ -61,6 +85,6 @@
   }
 
   render();
-  global.XinxuDevicePanel = { render: render };
+  global.XinxuDevicePanel = { render: render, open: open, close: close };
 })(window);
 

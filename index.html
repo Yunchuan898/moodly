@@ -79,6 +79,9 @@
   .home-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:4px}
   .home-actions button,.home-actions a{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer;text-decoration:none}
   .home-actions button:hover,.home-actions a:hover{color:var(--lamp)}
+  .home-actions .device-entry{width:34px;height:30px;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);border-radius:10px;color:var(--lamp)}
+  .home-actions .device-entry:hover{border-color:var(--lamp);background:var(--ink3)}
   .date strong{display:block;color:var(--paper);font-family:var(--serif);font-weight:600;font-size:1.02rem}
   .streak{margin-top:3px;font-size:.72rem;color:var(--lamp)}
 
@@ -133,18 +136,18 @@
   .device-metric b{display:block;font-family:var(--serif);font-size:1rem}
   .device-metric span{display:block;color:var(--muted);font-size:.73rem}
   .module-layer{position:fixed;inset:0;background:var(--ink);z-index:80;display:flex;flex-direction:column}
-  .module-layer[hidden],.settings-layer[hidden]{display:none!important}
+  .module-layer[hidden],.settings-layer[hidden],.device-layer[hidden]{display:none!important}
   .module-bar{height:60px;flex:none;padding:10px 20px;display:flex;align-items:center;gap:14px;
     border-bottom:1px solid var(--line);background:var(--ink2)}
   .module-bar button,.settings-close{border:1px solid var(--line);border-radius:99px;padding:7px 14px;
     background:transparent;color:var(--paper);font:inherit;cursor:pointer}
   .module-frame{border:0;flex:1;width:100%;background:var(--ink)}
-  .settings-layer{position:fixed;inset:0;z-index:90;background:rgba(14,11,24,.82);display:flex;
+  .settings-layer,.device-layer{position:fixed;inset:0;z-index:90;background:rgba(14,11,24,.82);display:flex;
     align-items:center;justify-content:center;padding:16px;overflow:auto}
-  .settings-panel{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--ink2);border:1px solid var(--line);
+  .settings-panel,.device-panel{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--ink2);border:1px solid var(--line);
     border-radius:var(--r-lg);padding:20px}
-  .settings-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .settings-panel h2{font-family:var(--serif);font-size:1.2rem}
+  .settings-head,.device-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .settings-panel h2,.device-panel h2{font-family:var(--serif);font-size:1.2rem}
   .settings-panel h3{font-size:.9rem;margin-top:18px}
   .settings-panel p{color:var(--muted);font-size:.78rem;margin-top:6px}
   .settings-row{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
@@ -320,7 +323,9 @@
     <header class="topbar">
       <div class="brand">心绪<small>情绪日记 · 自我关怀</small></div>
       <div class="date">
-        <div class="home-actions"><a id="toAssist" href="assist.html">交流</a>
+        <div class="home-actions"><button class="device-entry" id="openDevices" type="button" aria-label="选择设备" title="选择设备">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6l1 4H8l1-4ZM8 18h8l-1 4H9l-1-4Z"/><rect x="5" y="6" width="14" height="12" rx="3"/><path d="M9 12h6"/></svg>
+        </button><a id="toAssist" href="assist.html">交流</a>
         <button id="xinxuSafe" type="button">安全与支持</button>
         <button id="openSettings" type="button">设置</button></div>
         <strong id="todayStr">—</strong>
@@ -374,7 +379,6 @@
       <div class="sec-head"><h2 class="h2" id="h-devices">设备与身体线索</h2><span class="hint">仅供你自己回看</span></div>
       <div class="panel" id="homeDevices">
         <p class="device-note">当前设备接口只提供演示数据。睡眠、步数等数字不能推断你的情绪；是否在交流中提供这些线索，由你在交流页单独勾选。</p>
-        <div id="devicePlatforms"></div>
         <div id="deviceSummary"></div>
       </div>
     </section>
@@ -424,6 +428,14 @@
       <button class="settings-action" id="revokeAi" type="button">撤销 AI 授权</button>
       <button class="settings-action" id="clearAll" type="button">清除本机全部数据</button>
       <div id="wipeHost"></div>
+    </div>
+  </div>
+
+  <div class="device-layer" id="deviceLayer" hidden role="dialog" aria-modal="true" aria-label="选择设备">
+    <div class="device-panel">
+      <div class="device-head"><h2>选择设备</h2><button class="settings-close" id="closeDevices" type="button">关闭</button></div>
+      <p class="device-note">当前仅支持查看演示数据，尚未连接真实手表。选择一个设备可在主页预览数据格式。</p>
+      <div id="devicePlatforms"></div>
     </div>
   </div>
 

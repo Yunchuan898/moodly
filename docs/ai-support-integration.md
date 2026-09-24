@@ -24,7 +24,7 @@
 
 `history` 最多六条本页会话。 `context` 仅包含用户本次勾选的情绪记录摘要、已确认记忆或设备线索；沙盘内容与日记原文不传。后端返回 `reply`、`generatedBy`、`strategy`、`understanding`、`actions`、`suggest` 和 `safety`。记忆候选由现有记忆模块暂存，用户确认才写入；行动可采用、编辑或跳过，不自动写日记或联系他人。
 
-对话分析模块后续可传 `analysis.strategyHint`，限 `reflect/clarify/ground/reframe/plan`，服务端仅在本次目标允许时采用。设备数据在主页 `src/device-panel.js` 展示；交流页只提供单独勾选，勾选后通过 `XinxuWearables.contextFor` 读取背景线索，默认不发送。真实设备授权仍由穿戴模块负责。
+对话分析模块后续可传 `analysis.strategyHint`，限 `reflect/clarify/ground/reframe/plan`，服务端仅在本次目标允许时采用。设备选择由主页右上角图标打开 `src/device-panel.js` 的选择界面，数据摘要留在主页；交流页只提供单独勾选，勾选后通过 `XinxuWearables.contextFor` 读取背景线索，默认不发送。真实设备授权仍由穿戴模块负责。
 
 ## 部署边界
 
