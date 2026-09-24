@@ -164,14 +164,15 @@
 
   /* ---- 自我关怀 ---- */
   .care-grid{display:grid;grid-template-columns:1fr;gap:14px}
-  @media(min-width:560px){.care-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:560px){.care-grid{grid-template-columns:repeat(2,1fr)}}
   .care{position:relative;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--ink2);
     padding:20px 18px 18px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
   .care .ic{font-size:1.9rem;line-height:1}
   .care h3{font-family:var(--serif);font-weight:700;font-size:1.05rem}
   .care p{font-size:.82rem;color:var(--muted);flex:1;line-height:1.6}
   .care .go{align-self:flex-start;border:1px solid var(--line);background:transparent;color:var(--paper);
-    padding:8px 16px;border-radius:99px;font-size:.82rem;cursor:pointer;transition:.15s}
+    padding:8px 16px;border-radius:99px;font-size:.82rem;cursor:pointer;transition:.15s;
+    text-decoration:none;display:inline-block;font-family:var(--sans)}
   .care .go:hover{border-color:var(--lamp);color:var(--lamp)}
   .care .glow{position:absolute;width:120px;height:120px;border-radius:50%;filter:blur(46px);
     right:-30px;top:-30px;opacity:.25;background:var(--gc,var(--lamp))}
@@ -185,6 +186,8 @@
   .entry .top{display:flex;align-items:baseline;gap:10px}
   .entry .ml{font-family:var(--serif);font-weight:600}
   .entry .dt{font-size:.72rem;color:var(--faint)}
+  .entry .src{font-size:.66rem;color:var(--lilac);padding:1px 8px;border-radius:99px;
+    border:1px solid color-mix(in srgb,var(--lilac) 38%,var(--line))}
   .entry .note{font-size:.86rem;color:var(--paper);margin-top:3px;white-space:pre-wrap}
   .entry .tagrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
   .entry .tagrow span{font-size:.66rem;color:var(--muted);border:1px solid var(--line);padding:1px 7px;border-radius:99px}
@@ -424,8 +427,8 @@
     const tags=[...document.querySelectorAll(".tag[aria-pressed=true]")].map(b=>b.textContent);
     const entry={ id:Date.now(), date:todayStr, mood:selMood,
       intensity:+$("#intensity").value, note:$("#note").value.trim(), tags };
-    // 同一天覆盖
-    entries=entries.filter(e=>e.date!==todayStr);
+    // 同一天覆盖。沙盘留下的那条不动——它记的是另一回事，不该被顺手擦掉。
+    entries=entries.filter(e=>e.date!==todayStr || e.from==="sandbox");
     entries.unshift(entry);
     persist(); renderAll();
     // 复位
@@ -459,8 +462,9 @@
     if(!e){ el.innerHTML='<div class="when">'+ds+'</div><div class="mo" style="color:var(--muted)">没有记录</div>'; return; }
     const m=byKey(e.mood);
     const tags=(e.tags||[]).map(t=>"<span>"+t+"</span>").join("");
+    const how = e.from==="sandbox" ? '来自沙盘' : '强度 '+e.intensity+'/5';
     el.innerHTML='<div class="when">'+ds+'</div>'+
-      '<div class="mo" style="color:'+m.c+'">'+m.e+" "+m.label+' · 强度 '+e.intensity+'/5</div>'+
+      '<div class="mo" style="color:'+m.c+'">'+m.e+" "+m.label+' · '+how+'</div>'+
       (e.note?'<div class="nt">'+esc(e.note)+'</div>':'')+
       (tags?'<div class="ts">'+tags+'</div>':'');
   }
@@ -530,10 +534,13 @@
       {ic:"🎧", t:"声音 · 白噪音", gc:"#F0B36A", id:"careNoise", act:"播放雨声",
        p:"雨声般的白噪音，盖过杂念，适合专注或睡前。",
        widget:'<div class="noise" id="noiseWrap"><div class="lbl">雨声</div><div class="bar"><i style="animation-delay:0s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.2s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.05s"></i></div></div>'},
+      {ic:"🪴", t:"沙盘 · 摆一个世界", gc:"#C9A87C", href:"sandbox.html", act:"进入沙盘",
+       p:"不用说话，把微缩模型摆进沙里。手比嘴更早知道。", widget:""},
     ];
     box.innerHTML=cards.map(c=>'<div class="care"><div class="glow" style="--gc:'+c.gc+'"></div>'+
       '<div class="ic">'+c.ic+'</div><h3>'+c.t+'</h3><p>'+c.p+'</p>'+c.widget+
-      '<button class="go" id="'+c.id+'">'+c.act+'</button></div>').join("");
+      (c.href ? '<a class="go" href="'+c.href+'">'+c.act+'</a>'
+              : '<button class="go" id="'+c.id+'">'+c.act+'</button>')+'</div>').join("");
     $("#careBreath").onclick=openBreath;
     $("#careMove").onclick=toggleMove;
     $("#careNoise").onclick=toggleNoise;
@@ -614,9 +621,12 @@
     box.innerHTML=entries.map((e,i)=>{
       const m=byKey(e.mood);
       const tags=(e.tags||[]).map(t=>"<span>"+t+"</span>").join("");
+      const meta = e.from==="sandbox"
+        ? '<span class="src">来自沙盘'+(e.scene?' · 《'+esc(e.scene)+'》':'')+'</span>'
+        : '<span class="dt">'+e.date+' · 强度 '+e.intensity+'/5</span>';
       return '<div class="entry"><div class="em">'+m.e+'</div><div class="bd">'+
         '<div class="top"><span class="ml" style="color:'+m.c+'">'+m.label+'</span>'+
-        '<span class="dt">'+e.date+' · 强度 '+e.intensity+'/5</span>'+
+        meta+
         '<button class="del" data-i="'+i+'" aria-label="删除">✕</button></div>'+
         (e.note?'<div class="note">'+esc(e.note)+'</div>':'')+
         (tags?'<div class="tagrow">'+tags+'</div>':'')+
