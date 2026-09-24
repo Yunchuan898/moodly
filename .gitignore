@@ -1,0 +1,18 @@
+# Local environment and generated artifacts
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+node_modules/
+.venv/
+__pycache__/
+dist/
+coverage/
+
+# Local exploratory captures; keep reviewed product assets explicit
+/_prof/
+/_*.png
+/_*.html
+/_*.txt
+/_*.py
