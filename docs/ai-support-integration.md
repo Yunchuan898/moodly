@@ -34,6 +34,8 @@
 
 `message` 最多 2000 字；`history` 最多六条，每条 `role` 为 `user|assistant`、正文最多 1000 字；`memory` 最多十条、每条最多 120 字。`goal` 只能为 `be_heard|understand|calm|next_step`，`phase` 为 `explore|soothe|act`，`style` 为 `warm|direct`。`analysis` 可省略；`strategyHint` 只能为 `reflect|clarify|ground|reframe|plan`，且只有目标允许时才会采用。不要在 `analysis` 中传原始对话副本、模型提示词或穿戴数据。
 
+演示页只让用户直接点击四个目标按钮：`be_heard → soothe`、`understand → explore`、`calm → soothe`、`next_step → act`；`style` 默认 `warm`。合并后的页面可以沿用这层映射，无需把 `phase` 和 `style` 做成额外的首次选择。`be_heard` 不返回行动候选。
+
 成功回应示例：
 
 ```json

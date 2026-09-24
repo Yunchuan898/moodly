@@ -20,7 +20,7 @@ export async function generateSupport(config, input, strategy, candidates) {
     `当前支持策略：${strategy.label}。${strategy.instruction}`,
     `回应风格：${input.style === 'direct' ? '直接、清楚、少修饰' : '温和、真诚、不过度亲昵'}。`,
     `本次目标：${input.goal}。阶段：${strategy.phase}。`,
-    `只可从这些行动 ID 中选 0–2 个：${candidates.map(a => a.id).join(', ')}。也可以不选。`,
+    candidates.length ? `只可从这些行动 ID 中选 0–2 个：${candidates.map(a => a.id).join(', ')}。也可以不选。` : '本次目标是先被倾听，不提供行动建议；actionIds 必须是空数组。',
     '只返回 JSON 对象：{"reply":"简短回应","understanding":"可让用户纠正的理解假设；也可为空","actionIds":[],"memoryCandidate":"仅当用户明确表达长期回应偏好时才给出，否则空字符串"}。',
     'memoryCandidate 只可表示用户希望你如何回应，不记录健康状况、联系人、具体事件或身份信息。'
   ].join('\n');

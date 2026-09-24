@@ -15,9 +15,16 @@
     a { color:var(--accent); }
     .lead,.muted { color:var(--muted); }
     .panel { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:20px; margin:18px 0; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; }
+    .choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .choice { text-align:left; background:#211d32; color:var(--text); border:1px solid #736981; min-height:76px; }
+    .choice[aria-pressed=true] { border-color:var(--accent); background:#514061; box-shadow:inset 0 0 0 1px var(--accent); }
+    .choice strong,.choice small { display:block; }
+    .choice small { color:var(--muted); font-weight:400; margin-top:3px; }
+    details.panel > summary { cursor:pointer; font-weight:700; }
+    details.panel[open] > summary { margin-bottom:14px; }
+    @media(max-width:520px) { .choice-grid { grid-template-columns:1fr 1fr; } .choice { min-height:94px; padding:10px; } }
     label { display:block; font-weight:600; margin:8px 0; }
-    select,textarea,input[type=text] { width:100%; background:#211d32; border:1px solid #736981; border-radius:10px; color:var(--text); font:inherit; padding:10px; }
+    textarea,input[type=text] { width:100%; background:#211d32; border:1px solid #736981; border-radius:10px; color:var(--text); font:inherit; padding:10px; }
     textarea { min-height:95px; resize:vertical; }
     button { background:var(--accent); color:#211d32; border:0; border-radius:10px; padding:9px 14px; font:inherit; font-weight:700; cursor:pointer; }
     button.secondary { background:#514863; color:var(--text); }
@@ -45,7 +52,7 @@
     <h2 id="noticeTitle">先了解数据会去哪里</h2>
     <p id="provider">正在读取模型服务信息……</p>
     <p id="retention"></p>
-    <p>发送时，后端会把本次消息、最近最多六条会话、本次目标、阶段与回应方式，以及你勾选允许使用的已确认记忆发给模型供应商。不会自动发送日记、沙盘、联系人或穿戴数据。</p>
+    <p>发送时，后端会把本次消息、最近最多六条会话、本次目标，以及页面据此生成的阶段与回应方式发给模型供应商。你勾选时才会发送已确认记忆；日记、沙盘、联系人和穿戴数据不会自动发送。</p>
     <p>本演示后端不保存对话正文。当前页面的会话只在内存里；你确认保存的记忆和同意记录留在此浏览器。清除本机数据无法撤回供应商已经收到的请求。</p>
     <p id="policy"></p>
     <label class="check"><input id="consent" type="checkbox"> <span>我已阅读本次 AI 数据告知，同意按上面范围发送本次输入。每条消息由我主动发送。</span></label>
@@ -53,28 +60,25 @@
 
   <section class="panel" aria-labelledby="goalTitle">
     <h2 id="goalTitle">这次你希望得到什么</h2>
-    <div class="grid">
-      <label>本次目标
-        <select id="goal"><option value="be_heard">先听我说</option><option value="understand">一起梳理</option><option value="calm">让我缓一缓</option><option value="next_step">想想下一步</option></select>
-      </label>
-      <label>当前阶段
-        <select id="phase"><option value="explore">探索</option><option value="soothe">安抚</option><option value="act">行动</option></select>
-      </label>
-      <label>回应方式
-        <select id="style"><option value="warm">温和</option><option value="direct">直接</option></select>
-      </label>
+    <div class="choice-grid" id="goalChoices" role="group" aria-label="本次希望得到的帮助">
+      <button type="button" class="choice" data-goal="be_heard" aria-pressed="true"><strong>先听我说</strong><small>先说出来，不急着给建议</small></button>
+      <button type="button" class="choice" data-goal="understand" aria-pressed="false"><strong>一起梳理</strong><small>理清感受和发生的事</small></button>
+      <button type="button" class="choice" data-goal="calm" aria-pressed="false"><strong>让我缓一缓</strong><small>先照顾当下的感受</small></button>
+      <button type="button" class="choice" data-goal="next_step" aria-pressed="false"><strong>想想下一步</strong><small>找一件愿意做的小事</small></button>
     </div>
-    <p class="muted">阶段是你的偏好；本次目标和安全边界决定实际采用的方式，回应后会显示。</p>
+    <p class="muted">随时可以换；点哪个，本次回应就按哪个目标来。</p>
   </section>
 
-  <section class="panel" aria-labelledby="memoryTitle">
-    <h2 id="memoryTitle">你掌控的记忆</h2>
+  <details class="panel" id="memoryPanel">
+    <summary id="memoryTitle">记忆与本机数据管理</summary>
     <p class="muted">只保存你希望得到怎样的回应。记忆留在本机；勾选后才会随本次请求发送。请勿写入真实身份、健康细节或他人联系方式。</p>
     <div id="memoryList"></div>
     <div class="row"><input id="memoryInput" type="text" maxlength="120" placeholder="例如：我希望先被倾听，再听建议" aria-label="新增回应偏好"><button id="addMemory" type="button" class="secondary">保存偏好</button></div>
     <label class="check"><input id="includeMemory" type="checkbox"> <span>本次允许发送已保存的记忆</span></label>
     <button id="clearMemory" type="button" class="secondary">清除全部记忆</button>
-  </section>
+    <p class="muted">清除下面的数据只影响当前浏览器，无法撤回已发给模型服务方的内容。</p>
+    <button id="clearAll" type="button" class="secondary">清除本机 AI 会话、记忆和同意记录</button>
+  </details>
 
   <section class="panel" aria-labelledby="chatTitle">
     <h2 id="chatTitle">说说现在的事</h2>
@@ -93,11 +97,6 @@
     <div id="memoryCandidate"></div>
   </section>
 
-  <section class="panel">
-    <h2>结束时</h2>
-    <p class="muted">你可以随时停止。清除下面的数据只影响当前浏览器，不会撤回已发送给模型供应商的内容。</p>
-    <button id="clearAll" type="button" class="secondary">清除本机 AI 会话、记忆和同意记录</button>
-  </section>
 </main>
 <script src="/ai-support/app.js" defer></script>
 </body>

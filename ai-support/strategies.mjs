@@ -18,8 +18,6 @@ const BY_GOAL = {
 };
 
 export const ACTIONS = Object.freeze({
-  pause: { id: 'pause', title: '给自己一点缓冲', description: '暂停几分钟，先不用决定接下来必须做什么。' },
-  share_draft: { id: 'share_draft', title: '写一段想说的话', description: '先写给自己看；是否分享给信任的人，由你决定。' },
   trigger_note: { id: 'trigger_note', title: '记下这次情境', description: '只写发生了什么、自己的感受和仍不确定的部分。' },
   two_columns: { id: 'two_columns', title: '区分事实与猜测', description: '把确定发生的事和自己的解释分两栏写下。' },
   breathe: { id: 'breathe', title: '试一分钟慢呼吸', description: '如果你愿意，放慢呼气；不舒服就立刻停下。' },
@@ -29,7 +27,7 @@ export const ACTIONS = Object.freeze({
 });
 
 const ACTIONS_BY_GOAL = {
-  be_heard: ['pause', 'share_draft'],
+  be_heard: [],
   understand: ['trigger_note', 'two_columns'],
   calm: ['orient', 'breathe'],
   next_step: ['ten_minutes', 'ask_support']

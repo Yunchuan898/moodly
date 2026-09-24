@@ -1,7 +1,8 @@
 const MEMORY_KEY = 'xinxu.ai.memory.v1';
 const CONSENT_KEY = 'xinxu.ai.consent.v1';
 const $ = id => document.getElementById(id);
-const state = { info: null, history: [], busy: false, controller: null, requestId: 0 };
+const state = { info: null, history: [], busy: false, controller: null, requestId: 0, goal: 'be_heard' };
+const PHASE_FOR_GOAL = { be_heard: 'soothe', understand: 'explore', calm: 'soothe', next_step: 'act' };
 
 function read(key, fallback) {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
@@ -81,7 +82,7 @@ function showBubble(kind, value, label) {
 
 function renderResult(data) {
   const panel = $('resultPanel'); panel.classList.remove('hide');
-  $('strategy').textContent = data.strategy ? `本次方式：${data.strategy.label}。你可以更改上方目标或阶段。` : '这次已转为安全提示，未调用模型。';
+  $('strategy').textContent = data.strategy ? `本次方式：${data.strategy.label}。想换一种方式，可以直接点上方目标按钮。` : '这次已转为安全提示，未调用模型。';
   $('understanding').replaceChildren(); $('actions').replaceChildren(); $('memoryCandidate').replaceChildren();
   if (data.understanding) {
     const area = $('understanding');
@@ -137,7 +138,7 @@ async function send() {
   if (!consentMatches() && !write(CONSENT_KEY, consentRecord())) return;
   const body = {
     consent: true, consentVersion: state.info.consentVersion,
-    message, goal: $('goal').value, phase: $('phase').value, style: $('style').value,
+    message, goal: state.goal, phase: PHASE_FOR_GOAL[state.goal], style: 'warm',
     history: state.history.slice(-6), memory: $('includeMemory').checked ? memory() : []
   };
   state.busy = true; $('send').disabled = true; status('正在等待回应……');
@@ -167,6 +168,12 @@ function endSession() {
 }
 
 $('addMemory').addEventListener('click', () => addMemory($('memoryInput').value));
+$('goalChoices').addEventListener('click', event => {
+  const target = event.target.closest('button[data-goal]');
+  if (!target) return;
+  state.goal = target.dataset.goal;
+  $('goalChoices').querySelectorAll('button[data-goal]').forEach(choice => choice.setAttribute('aria-pressed', String(choice === target)));
+});
 $('clearMemory').addEventListener('click', () => { if (remove(MEMORY_KEY)) { renderMemory(); status('本机记忆已清除。已发送中的请求无法撤回。'); } });
 $('send').addEventListener('click', send);
 $('endSession').addEventListener('click', () => { endSession(); status('本次会话已清空。已发送中的请求无法撤回。'); });
