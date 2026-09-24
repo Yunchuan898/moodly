@@ -28,6 +28,8 @@ window.Sand = (function () {
   var dirty = null;   // {x0,y0,x1,y1} 格坐标，null = 全脏
   var running = false, raf = 0;
   var time = 0;
+  var rev = 0;        // 高度场变更计数。沙面一稳定就不再涨，
+                      // 外部靠它判断「该存草稿了 / 已经存过了」。
 
   /* ---------- 调色板 LUT ---------- */
   var LUT_N = 256;
@@ -62,6 +64,7 @@ window.Sand = (function () {
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
   function markDirty(x0, y0, x1, y1) {
+    rev++;
     x0 = clamp(x0, 0, GW - 1); y0 = clamp(y0, 0, GH - 1);
     x1 = clamp(x1, 0, GW - 1); y1 = clamp(y1, 0, GH - 1);
     if (!dirty) dirty = { x0: x0, y0: y0, x1: x1, y1: y1 };
@@ -72,7 +75,7 @@ window.Sand = (function () {
       if (y1 > dirty.y1) dirty.y1 = y1;
     }
   }
-  function dirtyAll() { dirty = { x0: 0, y0: 0, x1: GW - 1, y1: GH - 1 }; }
+  function dirtyAll() { rev++; dirty = { x0: 0, y0: 0, x1: GW - 1, y1: GH - 1 }; }
 
   /* ---------- 起伏噪声 ---------- */
   function staticNoise() {
@@ -310,6 +313,39 @@ window.Sand = (function () {
     render();
   }
 
+  /* ---------- 存档：高度场的取出与放回 ---------- */
+  /* 量化到 16 位。8 位的话相邻格会有 1/255 的台阶，经 RELIEF=32 放大后
+     变成肉眼可见的色带；16 位的量化误差在光照里可以忽略。
+     128×96 采样 → 24KB → base64 约 32KB 一件作品，localStorage 放得下。 */
+  function getField() {
+    var out = new Uint16Array(GW * GH);
+    for (var i = 0; i < out.length; i++) out[i] = (clamp(h[i], 0, 1) * 65535) | 0;
+    return out;
+  }
+  function setField(u16) {
+    if (!u16 || u16.length !== GW * GH) return false;
+    for (var i = 0; i < h.length; i++) h[i] = u16[i] / 65535;
+    dirtyAll();
+    render();
+    return true;
+  }
+  /* 直接对字节做 base64。字节序按本机——localStorage 本来也只在同一台
+     机器上读，够用。 */
+  function fieldToB64(u16) {
+    var b = new Uint8Array(u16.buffer), s = "", CH = 0x8000;
+    for (var i = 0; i < b.length; i += CH) {
+      s += String.fromCharCode.apply(null, b.subarray(i, i + CH));
+    }
+    return btoa(s);
+  }
+  function b64ToField(b64) {
+    try {
+      var bin = atob(b64), b = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+      return new Uint16Array(b.buffer);
+    } catch (e) { return null; }
+  }
+
   function start() {
     if (running) return;
     running = true;
@@ -328,6 +364,11 @@ window.Sand = (function () {
     stop: stop,
     step: step,
     poke: poke,
+    getField: getField,
+    setField: setField,
+    rev: function () { return rev; },
+    fieldToB64: fieldToB64,
+    b64ToField: b64ToField,
     heightAt: heightAt,
     markDirty: markDirty,
     dirtyAll: dirtyAll,

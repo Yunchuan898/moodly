@@ -56,21 +56,28 @@ window.Scene = (function () {
   }
 
   /* ---------- 序列化 ---------- */
-  function serialize() {
-    return { v: 1, items: items.map(function (it) {
+  /* field 是沙面的高度场（base64）。没有它，打开旧作品时沙具会回来、
+     但挖出来的坑和堆起来的丘全没了——那就谈不上「复现」。 */
+  function serialize(field) {
+    var out = { v: 2, ts: Date.now(), items: items.map(function (it) {
       return { k: it.k, x: +it.x.toFixed(4), y: +it.y.toFixed(4),
                rot: Math.round(it.rot), sc: +it.sc.toFixed(3) };
     }) };
+    if (field) out.field = field;
+    return out;
   }
+  /* 返回存档里的沙面，交给调用方喂给沙面引擎（Scene 不该知道 Sand 的存在）。
+     v1 的老存档没有 field，返回 null，沙面保持原样。 */
   function load(data) {
     clear();
-    if (!data || !data.items) return;
+    if (!data || !data.items) return null;
     data.items.forEach(function (o) {
       if (!window.Shelf.find(o.k)) return;   // 忽略未知沙具，向前兼容
       var it = add(o.k, o.x, o.y);
       it.rot = o.rot || 0;
       it.sc = o.sc || 1;
     });
+    return data.field || null;
   }
 
   /* ---------- 持久化 ---------- */
@@ -87,7 +94,7 @@ window.Scene = (function () {
     catch (e) { return false; }
   }
 
-  function saveDraft() { return write(DRAFT_KEY, serialize()); }
+  function saveDraft(field) { return write(DRAFT_KEY, serialize(field)); }
   function loadDraft() { return read(DRAFT_KEY, null); }
   function clearDraft() {
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
@@ -101,17 +108,18 @@ window.Scene = (function () {
     var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
-  function saveScene(name, thumb) {
+  function saveScene(name, thumb, field) {
     var a = listScenes();
+    var now = Date.now();
     a.unshift({
-      id: Date.now(),
+      id: now,
+      ts: now,                 // 记录时刻，不只是日期
       name: name || "未命名",
-      date: localDate(),
+      date: localDate(),       // 保留给 v1 老存档做兜底
       thumb: thumb || "",
-      data: serialize(),
+      data: serialize(field),
     });
-    write(SCENES_KEY, a);
-    return a;
+    return write(SCENES_KEY, a);   // false = 没存下（多半是 localStorage 满了）
   }
   function deleteScene(id) {
     var a = listScenes().filter(function (s) { return s.id !== id; });

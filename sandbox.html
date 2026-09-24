@@ -291,6 +291,8 @@
     background:linear-gradient(120deg,var(--lamp),#e89a4f);color:#2a1a05;
     font-weight:600;font-size:.98rem;font-family:var(--sans);cursor:pointer;letter-spacing:2px}
   .modal .go:hover{filter:brightness(1.06)}
+  /* 不可逆的那一下。不用正红——这是个陪伴工具，不该像系统报错。 */
+  .modal .go.warn{background:linear-gradient(120deg,#C87F6C,#B26A58);color:#2a1210}
   .modal .ghost-btn{
     width:100%;margin-top:9px;border:1px solid var(--line);background:transparent;
     color:var(--muted);border-radius:var(--r-md);padding:11px;font-size:.84rem;
@@ -424,6 +426,16 @@
     </div>
   </div>
 
+  <!-- 二次确认。抚平沙面和收起沙具都是不可逆的，原生 confirm 太糙，也不合调性。 -->
+  <div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="cfTitle">
+    <div class="modal">
+      <h3 id="cfTitle"></h3>
+      <p class="sub" id="cfSub"></p>
+      <button class="go warn" id="cfOk"></button>
+      <button class="ghost-btn" id="cfCancel">再想想</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
 <script src="src/sand.js"></script>
@@ -477,6 +489,30 @@
   }
   function inTray(p) { return p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1; }
 
+  /* 记录时刻，显示到分钟。「今天 / 昨天 / …月…日」比一串 YYYY-MM-DD 有体温。 */
+  function fmtTime(ts) {
+    if (!ts) return "";
+    var d = new Date(ts), now = new Date();
+    var p = function (n) { return String(n).padStart(2, "0"); };
+    var hm = p(d.getHours()) + ":" + p(d.getMinutes());
+    var midnight = function (x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+    var days = Math.round((midnight(now) - midnight(d)) / 86400000);
+    if (days === 0) return "今天 " + hm;
+    if (days === 1) return "昨天 " + hm;
+    if (d.getFullYear() === now.getFullYear()) return (d.getMonth() + 1) + "月" + d.getDate() + "日 " + hm;
+    return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  }
+
+  /* 二次确认。返回 Promise，点「再想想」、按 Esc、点背景都算否。 */
+  var cfResolve = null;
+  function askConfirm(title, sub, okLabel) {
+    $("#cfTitle").textContent = title;
+    $("#cfSub").textContent = sub;
+    $("#cfOk").textContent = okLabel;
+    openOverlay("confirmOverlay");
+    return new Promise(function (res) { cfResolve = res; });
+  }
+
   /* ---------- 沙面 ---------- */
   Sand.init(canvas);
 
@@ -493,6 +529,9 @@
     }
     Sand.step();
     syncShadows();
+    // 高度场一有变化就（去抖地）落草稿。安息角松弛在笔刷松开之后还会
+    // 继续塌一阵，靠 rev 能一直追到它真正稳定为止。
+    if (Sand.rev() !== savedRev) persistAll();
   }
   requestAnimationFrame(loop);
 
@@ -721,14 +760,23 @@
     });
   });
   $("#flatten").onclick = function () {
-    Sand.reset(); syncShadows(); persistAll();
-    toast("沙面抚平了");
+    askConfirm("抚平沙面？",
+      "沙面上挖出来的坑和堆起来的丘都会消失，回到一盘平整的沙。沙具不动。这一步收不回来。",
+      "抚平").then(function (ok) {
+      if (!ok) return;
+      Sand.reset(); syncShadows(); persistAll();
+      toast("沙面抚平了");
+    });
   };
   $("#clearFigs").onclick = function () {
     if (!Scene.count()) return toast("沙盘里还没有沙具");
-    if (!confirm("把沙盘里的沙具都收起来？（沙面留着）")) return;
-    layer.innerHTML = ""; Scene.clear(); selId = null; persistAll();
-    toast("已经收起来了");
+    askConfirm("收起沙具？",
+      "沙盘里的 " + Scene.count() + " 件沙具会全部收走。沙面保持原样。这一步收不回来。",
+      "收起来").then(function (ok) {
+      if (!ok) return;
+      layer.innerHTML = ""; Scene.clear(); selId = null; persistAll();
+      toast("已经收起来了");
+    });
   };
 
   document.addEventListener("keydown", function (e) {
@@ -740,8 +788,10 @@
       e.preventDefault();
     }
     if (e.key === "Escape") {
+      // 确认框优先：它开着的时候，Esc 的意思就是「不」
+      if ($("#confirmOverlay").classList.contains("open")) return closeConfirm(false);
+      if (document.querySelector(".overlay.open")) return closeAll();
       if (selId != null) select(null);
-      else closeAll();
     }
   });
   // 滚轮缩放选中的沙具
@@ -754,15 +804,25 @@
   }, { passive: false });
 
   /* ---------- 草稿 ---------- */
-  var saveTimer = null;
+  var saveTimer = null, savedRev = -1;
   function persistAll() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () { Scene.saveDraft(); }, 420);
+    saveTimer = setTimeout(function () {
+      Scene.saveDraft(Sand.fieldToB64(Sand.getField()));
+      savedRev = Sand.rev();
+    }, 420);
+  }
+  /* 把存档里的沙面放回去。老存档没有这一项，返回 false，沙面保持原样。 */
+  function applyField(b64) {
+    if (!b64) return false;
+    var f = Sand.b64ToField(b64);
+    return f ? Sand.setField(f) : false;
   }
   function restore() {
     var d = Scene.loadDraft();
     if (!d) return;
-    Scene.load(d);
+    var field = Scene.load(d);
+    applyField(field);
     Scene.all().forEach(function (it) { buildFig(it); place(it); });
     syncShadows();
     if (Scene.count()) hideHint();
@@ -801,8 +861,16 @@
     btn.disabled = true; btn.textContent = "正在保存…";
 
     Sand.step();   // 脏矩形还没渲染完就抓图的话，缩略图会停在挖沙之前的状态
+    var field = Sand.fieldToB64(Sand.getField());
     Scene.makeThumb(canvas, 400, 300).then(function (thumb) {
-      Scene.saveScene(name, thumb);
+      var stored = Scene.saveScene(name, thumb, field);
+
+      // 存不下就说存不下。存档功能最忌讳的就是假装成功。
+      if (!stored) {
+        btn.disabled = false; btn.textContent = "保存这个世界";
+        toast("存不下了——浏览器的存储满了。去「我的沙盘」删掉几件旧的再试。");
+        return;
+      }
 
       var wrote = false;
       if (selMood) {
@@ -848,7 +916,8 @@
                  : '<div class="th"></div>') +
         '<button class="rm" data-rm="' + s.id + '" title="删除">✕</button>' +
         '<div class="meta"><div class="nm">' + esc(s.name) + "</div>" +
-        '<div class="dt">' + s.date + " · " + (s.data.items || []).length + " 件</div></div></div>";
+        '<div class="dt">' + (fmtTime(s.ts) || s.date) + " · " +
+          (s.data.items || []).length + " 件</div></div></div>";
     }).join("") + "</div>";
 
     box.querySelectorAll(".gcard").forEach(function (c) {
@@ -856,20 +925,30 @@
         if (e.target.dataset.rm) return;
         var s = Scene.listScenes().filter(function (x) { return x.id === +c.dataset.id; })[0];
         if (!s) return;
-        if (Scene.count() && !confirm("会替换掉沙盘里现在的东西，继续吗？")) return;
-        clearStage();
-        Scene.load(s.data);
-        Scene.all().forEach(function (it) { buildFig(it); place(it); });
-        syncShadows(); hideHint(); persistAll(); closeAll();
-        toast("打开了「" + s.name + "」");
+        var open = function () {
+          clearStage();
+          applyField(Scene.load(s.data));
+          Scene.all().forEach(function (it) { buildFig(it); place(it); });
+          syncShadows(); hideHint(); persistAll(); closeAll();
+          toast("打开了「" + s.name + "」");
+        };
+        if (!Scene.count()) return open();
+        askConfirm("打开「" + esc(s.name) + "」？",
+          "现在沙盘里的东西会被替换掉。没存过的话，它就没了。",
+          "打开").then(function (ok) { if (ok) open(); });
       };
     });
     box.querySelectorAll("[data-rm]").forEach(function (b) {
       b.onclick = function (e) {
         e.stopPropagation();
-        if (!confirm("删掉这件作品？")) return;
-        Scene.deleteScene(+b.dataset.rm);
-        renderGallery(); refreshGalN();
+        var s = Scene.listScenes().filter(function (x) { return x.id === +b.dataset.rm; })[0];
+        askConfirm("删掉这件作品？",
+          "「" + esc(s.name || "未命名") + "」会从我的沙盘里消失。这一步收不回来。",
+          "删掉").then(function (ok) {
+          if (!ok) return;
+          Scene.deleteScene(+b.dataset.rm);
+          renderGallery(); refreshGalN();
+        });
       };
     });
   }
@@ -880,14 +959,34 @@
 
   /* ---------- 弹层 ---------- */
   function openOverlay(id) { $("#" + id).classList.add("open"); }
+
+  /* 确认框只关自己。它常常是盖在别的弹层上问的（比如从「我的沙盘」里删作品），
+     把底下的画廊一起关掉会让人莫名其妙。 */
+  function closeConfirm(result) {
+    $("#confirmOverlay").classList.remove("open");
+    var r = cfResolve; cfResolve = null;
+    if (r) r(result);
+  }
+  /* 关闭一切。悬着的确认框一律按「否」结清——
+     点背景、按 Esc 或别的什么把弹层关掉，都不该被当成同意。 */
   function closeAll() {
     document.querySelectorAll(".overlay").forEach(function (o) { o.classList.remove("open"); });
+    if (cfResolve) { var r = cfResolve; cfResolve = null; r(false); }
   }
+  $("#cfOk").onclick = function () { closeConfirm(true); };
+  $("#cfCancel").onclick = function () { closeConfirm(false); };
   document.querySelectorAll("[data-close]").forEach(function (b) {
-    b.onclick = function () { $("#" + b.dataset.close).classList.remove("open"); };
+    b.onclick = function () {
+      if (b.dataset.close === "confirmOverlay") return closeConfirm(false);
+      $("#" + b.dataset.close).classList.remove("open");
+    };
   });
   document.querySelectorAll(".overlay").forEach(function (o) {
-    o.addEventListener("click", function (e) { if (e.target === o) o.classList.remove("open"); });
+    o.addEventListener("click", function (e) {
+      if (e.target !== o) return;                        // 只认点背景，不认点内容
+      if (o.id === "confirmOverlay") return closeConfirm(false);
+      o.classList.remove("open");
+    });
   });
 
   function esc(s) {
@@ -907,6 +1006,7 @@
   syncShadows();
   refreshGalN();
   refreshRect();
+
 })();
 </script>
 </body>
