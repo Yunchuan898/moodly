@@ -117,6 +117,7 @@
       V.register(name.value, pass.value).then(function (res) {
         go.disabled = false;
         if (!res.ok) { err.textContent = res.error; err.hidden = false; return; }
+        markUnlocked();
         done();
       });
     }
@@ -130,31 +131,28 @@
 
   /* ---------- 第一步 · 登录 ---------- */
 
-  /* 口令只在「进入程序」时问一次。
-     之前是每次加载页面都问——从首页点进沙盘、再点进对话，每换一次页面
-     就要重输一次，像是每隔五分钟被门卫拦一回。
-
-     用带时效的 localStorage 而不是 sessionStorage：后者不跨标签页，
-     新开一个标签又会问一遍。12 小时够覆盖一次连续使用，
-     也不会把「已解锁」永久留在机器上。
-
-     顺带说清：这不降低任何实际安全性。这个口令本来就不是防护——
-     vault.js 顶部自己写了「指望它保护数据是不现实的」。它的作用是
-     归属感，不是门锁。既然是归属感，就不该让人每换一页就重新证明一次。 */
+  /* 同一浏览器标签会话只输入一次口令。跨页面和同源子视图共享会话状态；
+     退出或关闭标签后再次进入需要重新输入。口令并不保护 localStorage 原文。 */
   var UNLOCK_KEY = 'xinxu.unlocked.v1';
-  var UNLOCK_TTL = 12 * 3600 * 1000;
 
   function unlocked() {
-    try {
-      var t = Number(global.localStorage.getItem(UNLOCK_KEY) || 0);
-      return t > 0 && (Date.now() - t) < UNLOCK_TTL;
-    } catch (e) { return false; }
+    try { return global.sessionStorage.getItem(UNLOCK_KEY) === '1'; }
+    catch (e) { return false; }
   }
   function markUnlocked() {
-    try { global.localStorage.setItem(UNLOCK_KEY, String(Date.now())); } catch (e) {}
+    try { global.sessionStorage.setItem(UNLOCK_KEY, '1'); global.localStorage.removeItem(UNLOCK_KEY); } catch (e) {}
   }
   function clearUnlocked() {
-    try { global.localStorage.removeItem(UNLOCK_KEY); } catch (e) {}
+    try {
+      global.sessionStorage.removeItem(UNLOCK_KEY);
+      global.sessionStorage.removeItem('xinxu.ai.goal.v1');
+      global.sessionStorage.removeItem('xinxu.ai.strategy.v1');
+      global.localStorage.removeItem(UNLOCK_KEY);
+    } catch (e) {}
+  }
+  function signOut() {
+    clearUnlocked();
+    global.location.replace('index.html');
   }
 
   function renderUnlockStep(done) {
@@ -199,6 +197,7 @@
      但要让人清楚这是销毁，不是重置。
      「安全与支持」面板也调这个，销毁确认只此一份。 */
   function confirmWipe(host, onConfirm) {
+    injectStyle();
     if (host.querySelector('.xo-danger')) return;
 
     var box = el('div', 'xo-danger');
@@ -503,6 +502,8 @@
 
   global.XinxuOnboarding = {
     mount: mount,
+    unlocked: unlocked,
+    signOut: signOut,
     renderNoticeInto: renderNoticeInto,
     confirmWipe: confirmWipe
   };
@@ -514,3 +515,4 @@
     mount();
   }
 })(window);
+

@@ -9,7 +9,9 @@
 <style>html.xo-pending .shell{visibility:hidden}</style>
 <script>
   try{
-    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1")))
+    if(window.top === window.self) location.replace("index.html#assist");
+    if(window.top !== window.self) document.documentElement.classList.add("embedded");
+    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1") && sessionStorage.getItem("xinxu.unlocked.v1") === "1"))
       document.documentElement.className += " xo-pending";
   }catch(e){ document.documentElement.className += " xo-pending"; }
 </script>
@@ -34,6 +36,7 @@
   .blob.b{width:46vw;height:46vw;right:-14vw;top:14vh;background:var(--lamp)}
 
   .shell{max-width:1080px;margin:0 auto;padding:0 18px 70px}
+  html.embedded .topbar{display:none}
 
   .topbar{display:flex;align-items:center;gap:14px;padding:20px 0 14px;border-bottom:1px solid var(--line)}
   .back{color:var(--muted);text-decoration:none;font-size:.82rem;white-space:nowrap;
@@ -294,7 +297,9 @@
   /* ================= 对话 ================= */
   var turns = [];
   var goal = "be_heard", providerInfo = null;
+  try { goal = sessionStorage.getItem("xinxu.ai.goal.v1") || goal; } catch (e) {}
   var phaseFor = { be_heard: "soothe", understand: "explore", calm: "soothe", next_step: "act" };
+  if (!Object.prototype.hasOwnProperty.call(phaseFor, goal)) goal = "be_heard";
   var consentKey = "xinxu.ai.consent.v2";
   function consentSignature(info) {
     return [info.noticeVersion, info.providerName, info.privacyUrl, info.retention].join("|");
@@ -313,10 +318,14 @@
   $("#goalRow").querySelectorAll("[data-goal]").forEach(function (b) {
     b.onclick = function () {
       goal = b.dataset.goal;
+      try { sessionStorage.setItem("xinxu.ai.goal.v1", goal); sessionStorage.removeItem("xinxu.ai.strategy.v1"); } catch (e) {}
       $("#goalRow").querySelectorAll("[data-goal]").forEach(function (x) {
         x.setAttribute("aria-pressed", x === b ? "true" : "false");
       });
     };
+  });
+  $("#goalRow").querySelectorAll("[data-goal]").forEach(function (b) {
+    b.setAttribute("aria-pressed", b.dataset.goal === goal ? "true" : "false");
   });
   $("#revokeConsent").onclick = function () {
     $("#aiConsent").checked = false;
@@ -432,7 +441,8 @@
     turns.push({ me: false, text: "…" });
     renderChat();
 
-    Ag.run({ task: "chat", input: txt, goal: goal, stage: phaseFor[goal], style: "warm",
+    var sentGoal = goal;
+    Ag.run({ task: "chat", input: txt, goal: sentGoal, stage: phaseFor[sentGoal], style: "warm",
       consent: true, history: history,
       use: { entries: $("#includeEntries").checked, sandbox: false,
         devices: $("#includeDevices").checked, memory: $("#includeMemory").checked } })
@@ -444,6 +454,9 @@
           meta: res.generatedBy === "safety-rule" ? "安全提示" : ((res.strategy || "AI 回复") + " · " + res.meta.ms + "ms"),
         });
         renderChat();
+        if (res.generatedBy === "model" && res.strategy) {
+          try { sessionStorage.setItem("xinxu.ai.strategy.v1", JSON.stringify({ goal: sentGoal, strategy: res.strategy })); } catch (e) {}
+        }
         renderPropose(res);
         renderActions(res);
 

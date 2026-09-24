@@ -194,6 +194,7 @@
     'xinxu.memory.pending.v1',    // 待确认的记忆提议
     'xinxu.agent.config.v1',      // 旧版模型配置
     'xinxu.agent.sessions.v1',    // 旧版会话日志
+    'xinxu.unlocked.v1',          // 旧版跨会话解锁状态
     'xinxu.ai.consent.v2'         // AI 数据告知授权
   ];
 

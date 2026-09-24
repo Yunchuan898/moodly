@@ -10,7 +10,9 @@
 <script>
   /* 还没走完首次引导就先藏住内容，免得遮罩出现前闪一下。 */
   try{
-    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1")))
+    if(window.top === window.self) location.replace("index.html#sandbox");
+    if(window.top !== window.self) document.documentElement.classList.add("embedded");
+    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1") && sessionStorage.getItem("xinxu.unlocked.v1") === "1"))
       document.documentElement.className += " xo-pending";
   }catch(e){ document.documentElement.className += " xo-pending"; }
 </script>
@@ -50,6 +52,7 @@
   .blob.b{width:50vw;height:50vw;right:-16vw;top:6vh;background:var(--lilac)}
 
   .shell{max-width:1080px;margin:0 auto;padding:0 18px 70px}
+  html.embedded .topbar{display:none}
 
   /* ---------- 顶栏 ---------- */
   .topbar{display:flex;align-items:center;gap:14px;padding:20px 0 14px;border-bottom:1px solid var(--line)}
@@ -989,3 +992,4 @@
 <script src="src/support.js"></script>
 </body>
 </html>
+

@@ -11,7 +11,7 @@
   /* 还没走完首次引导就先藏住内容，免得遮罩出现前闪一下。
      判断要同步做在 head 里，放到 body 末尾就来不及了。 */
   try{
-    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1")))
+    if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1") && sessionStorage.getItem("xinxu.unlocked.v1") === "1"))
       document.documentElement.className += " xo-pending";
   }catch(e){ document.documentElement.className += " xo-pending"; }
 </script>
@@ -74,6 +74,9 @@
   .brand small{display:block;font-family:var(--sans);font-weight:400;font-size:.72rem;
     color:var(--muted);letter-spacing:1px;margin-top:3px}
   .date{text-align:right;color:var(--muted);font-size:.82rem}
+  .home-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .home-actions button{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer}
+  .home-actions button:hover{color:var(--lamp)}
   .date strong{display:block;color:var(--paper);font-family:var(--serif);font-weight:600;font-size:1.02rem}
   .streak{margin-top:3px;font-size:.72rem;color:var(--lamp)}
 
@@ -108,6 +111,39 @@
     box-shadow:0 8px 24px -10px rgba(240,179,106,.55);transition:transform .12s,filter .2s}
   .save:active{transform:translateY(1px)}
   .save:hover{filter:brightness(1.05)}
+  .module-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+  .module-card{display:block;text-align:left;background:var(--ink2);color:var(--paper);border:1px solid var(--line);
+    border-radius:var(--r-lg);padding:18px;cursor:pointer;font:inherit}
+  .module-card b{display:block;font-family:var(--serif);font-size:1.05rem}
+  .module-card span{display:block;color:var(--muted);font-size:.78rem;margin-top:5px}
+  .module-card:hover{border-color:var(--lamp)}
+  .module-layer{position:fixed;inset:0;background:var(--ink);z-index:80;display:flex;flex-direction:column}
+  .module-layer[hidden],.settings-layer[hidden]{display:none!important}
+  .module-bar{height:60px;flex:none;padding:10px 20px;display:flex;align-items:center;gap:14px;
+    border-bottom:1px solid var(--line);background:var(--ink2)}
+  .module-bar button,.settings-close{border:1px solid var(--line);border-radius:99px;padding:7px 14px;
+    background:transparent;color:var(--paper);font:inherit;cursor:pointer}
+  .module-frame{border:0;flex:1;width:100%;background:var(--ink)}
+  .settings-layer{position:fixed;inset:0;z-index:90;background:rgba(14,11,24,.82);display:flex;
+    align-items:center;justify-content:center;padding:16px;overflow:auto}
+  .settings-panel{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--ink2);border:1px solid var(--line);
+    border-radius:var(--r-lg);padding:20px}
+  .settings-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .settings-panel h2{font-family:var(--serif);font-size:1.2rem}
+  .settings-panel h3{font-size:.9rem;margin-top:18px}
+  .settings-panel p{color:var(--muted);font-size:.78rem;margin-top:6px}
+  .settings-row{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .settings-row input{flex:1;min-width:130px;background:var(--ink3);border:1px solid var(--line);
+    border-radius:9px;color:var(--paper);padding:8px;font:inherit}
+  .settings-row button,.settings-action{border:1px solid var(--line);border-radius:9px;background:transparent;
+    color:var(--paper);padding:8px 12px;cursor:pointer;font:inherit}
+  .settings-action{margin:10px 7px 0 0}
+  .settings-row button:hover,.settings-action:hover,.module-bar button:hover{border-color:var(--lamp)}
+  .settings-goals{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+  .settings-goals button{border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--paper);
+    padding:7px 11px;cursor:pointer;font:inherit}
+  .settings-goals button[aria-pressed="true"]{background:var(--lamp);border-color:var(--lamp);color:var(--ink)}
+  @media(max-width:560px){.module-cards{grid-template-columns:1fr}.home-actions{gap:5px}}
 
   .padcare{font-size:.84rem;color:var(--muted);margin-top:4px;line-height:1.7;min-height:1.6em}
   .spark .cap .lg{display:inline-block;width:9px;height:3px;border-radius:2px;margin:0 5px 0 0;
@@ -269,8 +305,9 @@
     <header class="topbar">
       <div class="brand">心绪<small>情绪日记 · 自我关怀</small></div>
       <div class="date">
-        <a class="xsup-entry" id="toAssist" href="assist.html">对话</a>
-        <button class="xsup-entry" id="xinxuSafe" type="button">安全与支持</button>
+        <div class="home-actions"><button id="toAssist" data-open-module="assist" type="button">交流</button>
+        <button id="xinxuSafe" type="button">安全与支持</button>
+        <button id="openSettings" type="button">设置</button></div>
         <strong id="todayStr">—</strong>
         <div id="streak" class="streak"></div>
       </div>
@@ -298,6 +335,14 @@
       </div>
 
       <button class="save" id="save">记下这一刻</button>
+    </section>
+
+    <section class="sec" aria-labelledby="h-next">
+      <div class="sec-head"><h2 class="h2" id="h-next">此刻还想做什么</h2></div>
+      <div class="module-cards">
+        <button class="module-card" type="button" data-open-module="assist"><b>聊一聊</b><span>说说现在，选择希望被怎样回应</span></button>
+        <button class="module-card" type="button" data-open-module="sandbox"><b>摆一个世界</b><span>不想打字时，用沙盘表达</span></button>
+      </div>
     </section>
 
     <!-- 趋势 -->
@@ -328,7 +373,34 @@
       <div class="panel log" id="log"></div>
     </section>
 
-    <footer>心绪 · 把心情写成天气，陪自己慢慢好起来。<br/>数据仅保存在你自己的浏览器里。</footer>
+    <footer>心绪 · 把心情写成天气，陪自己慢慢好起来。<br/>日记和沙盘保存在本机；交流的数据发送规则见交流页告知。</footer>
+  </div>
+
+  <div class="module-layer" id="moduleLayer" hidden aria-label="功能页面">
+    <div class="module-bar"><button id="moduleBack" type="button">← 返回首页</button><strong id="moduleTitle"></strong></div>
+    <iframe class="module-frame" id="moduleFrame" title="心绪功能"></iframe>
+  </div>
+
+  <div class="settings-layer" id="settingsLayer" hidden role="dialog" aria-modal="true" aria-label="设置">
+    <div class="settings-panel">
+      <div class="settings-head"><h2>设置</h2><button class="settings-close" id="closeSettings" type="button">关闭</button></div>
+      <h3>账户</h3><p id="settingsAccount"></p>
+      <button class="settings-action" id="signOut" type="button">退出当前会话</button>
+      <h3>长期记忆</h3><p>仅保存你确认过的回应偏好。可以修改或删除。</p>
+      <div id="settingsMemory"></div>
+      <button class="settings-action" id="clearMemory" type="button">清空长期记忆</button>
+      <h3>交流方案</h3><p id="settingsStrategy">选择本次目标；AI 会在目标范围内调整回应策略，下一次回复后显示具体策略。</p>
+      <div class="settings-goals" id="settingsGoals">
+        <button type="button" data-settings-goal="be_heard">听我说</button>
+        <button type="button" data-settings-goal="understand">理清原因</button>
+        <button type="button" data-settings-goal="calm">先缓一缓</button>
+        <button type="button" data-settings-goal="next_step">找下一步</button>
+      </div>
+      <h3>数据与授权</h3><p>撤销后，下一次 AI 交流需要重新同意。已发送的请求无法由本机撤回。</p>
+      <button class="settings-action" id="revokeAi" type="button">撤销 AI 授权</button>
+      <button class="settings-action" id="clearAll" type="button">清除本机全部数据</button>
+      <div id="wipeHost"></div>
+    </div>
   </div>
 
   <!-- 呼吸练习 -->
@@ -626,12 +698,12 @@
       {ic:"🎧", t:"声音 · 白噪音", gc:"#F0B36A", id:"careNoise", act:"播放雨声",
        p:"雨声般的白噪音，盖过杂念，适合专注或睡前。",
        widget:'<div class="noise" id="noiseWrap"><div class="lbl">雨声</div><div class="bar"><i style="animation-delay:0s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.2s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.05s"></i></div></div>'},
-      {ic:"🪴", t:"沙盘 · 摆一个世界", gc:"#C9A87C", href:"sandbox.html", act:"进入沙盘",
+      {ic:"🪴", t:"沙盘 · 摆一个世界", gc:"#C9A87C", module:"sandbox", act:"进入沙盘",
        p:"不用说话，把微缩模型摆进沙里。手比嘴更早知道。", widget:""},
     ];
     box.innerHTML=cards.map(c=>'<div class="care"><div class="glow" style="--gc:'+c.gc+'"></div>'+
       '<div class="ic">'+c.ic+'</div><h3>'+c.t+'</h3><p>'+c.p+'</p>'+c.widget+
-      (c.href ? '<a class="go" href="'+c.href+'">'+c.act+'</a>'
+      (c.module ? '<button class="go" type="button" data-open-module="'+c.module+'">'+c.act+'</button>'
               : '<button class="go" id="'+c.id+'">'+c.act+'</button>')+'</div>').join("");
     $("#careBreath").onclick=openBreath;
     $("#careMove").onclick=toggleMove;
@@ -751,8 +823,89 @@
 <!-- 顺序有依赖：onboarding 要用 vault，support 要用 onboarding 的须知渲染 -->
 <script src="src/safety-content.js"></script>
 <script src="src/vault.js"></script>
+<script src="src/memory.js"></script>
 <script src="src/onboarding.js"></script>
 <script src="src/safety.js"></script>
 <script src="src/support.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var layer = $("#moduleLayer"), frame = $("#moduleFrame"), current = "";
+  var routes = { assist: { src: "assist.html", title: "交流" }, sandbox: { src: "sandbox.html", title: "沙盘" } };
+  function syncModule() {
+    var key = location.hash.slice(1), route = routes[key];
+    if (!route || !XinxuOnboarding.unlocked() || !XinxuVault.hasConsented()) {
+      layer.hidden = true;
+      if (current) { frame.removeAttribute("src"); current = ""; }
+      return;
+    }
+    if (current !== key) { frame.src = route.src; current = key; }
+    $("#moduleTitle").textContent = route.title;
+    layer.hidden = false;
+  }
+  document.addEventListener("click", function (e) {
+    var button = e.target.closest("[data-open-module]");
+    if (button) { location.hash = button.dataset.openModule; syncModule(); }
+  });
+  $("#moduleBack").onclick = function () { history.pushState(null, "", location.pathname + location.search); syncModule(); };
+  window.addEventListener("hashchange", syncModule);
+  window.addEventListener("popstate", syncModule);
+  window.addEventListener("xinxu:ready", syncModule);
+
+  function renderMemory() {
+    var box = $("#settingsMemory"), items = XinxuMemory.list();
+    box.textContent = "";
+    if (!items.length) { var empty = document.createElement("p"); empty.textContent = "还没有保存长期记忆。"; box.appendChild(empty); return; }
+    items.forEach(function (item) {
+      var row = document.createElement("div"); row.className = "settings-row";
+      var input = document.createElement("input"); input.value = item.text; input.maxLength = 60;
+      input.setAttribute("aria-label", XinxuMemory.kindByKey(item.kind).name + "记忆");
+      var save = document.createElement("button"); save.type = "button"; save.textContent = "保存";
+      save.onclick = function () { if (input.value.trim()) { XinxuMemory.update(item.id, input.value.trim()); renderMemory(); } };
+      var del = document.createElement("button"); del.type = "button"; del.textContent = "删除";
+      del.onclick = function () { XinxuMemory.remove(item.id); renderMemory(); };
+      row.appendChild(input); row.appendChild(save); row.appendChild(del); box.appendChild(row);
+    });
+  }
+  function renderStrategy() {
+    var goal = "be_heard", chosen = null;
+    try { goal = sessionStorage.getItem("xinxu.ai.goal.v1") || goal;
+      chosen = JSON.parse(sessionStorage.getItem("xinxu.ai.strategy.v1") || "null"); } catch (e) {}
+    if (!["be_heard", "understand", "calm", "next_step"].includes(goal)) goal = "be_heard";
+    $("#settingsGoals").querySelectorAll("[data-settings-goal]").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.settingsGoal === goal ? "true" : "false");
+    });
+    $("#settingsStrategy").textContent = chosen && chosen.goal === goal
+      ? "当前策略：" + chosen.strategy + "。可以切换目标，下一次回复会重新选择。"
+      : "选择本次目标；AI 会在目标范围内调整回应策略，下一次回复后显示具体策略。";
+  }
+  $("#settingsGoals").querySelectorAll("[data-settings-goal]").forEach(function (b) {
+    b.onclick = function () {
+      try { sessionStorage.setItem("xinxu.ai.goal.v1", b.dataset.settingsGoal);
+        sessionStorage.removeItem("xinxu.ai.strategy.v1"); } catch (e) {}
+      renderStrategy();
+    };
+  });
+  $("#openSettings").onclick = function () {
+    var account = XinxuVault.getAccount();
+    $("#settingsAccount").textContent = account ? "当前称呼：" + account.nickname + "。关闭当前标签或退出后，再进入需要输入口令。" : "当前没有本机账户。";
+    renderMemory(); renderStrategy(); $("#settingsLayer").hidden = false;
+  };
+  $("#closeSettings").onclick = function () { $("#settingsLayer").hidden = true; };
+  $("#settingsLayer").addEventListener("click", function (e) { if (e.target === this) this.hidden = true; });
+  $("#signOut").onclick = function () { XinxuOnboarding.signOut(); };
+  $("#clearMemory").onclick = function () {
+    if (confirm("清除全部长期记忆和待确认建议？")) { XinxuMemory.clear(); XinxuMemory.dropPending(); renderMemory(); }
+  };
+  $("#revokeAi").onclick = function () {
+    try { localStorage.removeItem("xinxu.ai.consent.v2"); } catch (e) {}
+    alert("已撤销 AI 授权。下次交流需重新同意。");
+  };
+  $("#clearAll").onclick = function () { XinxuOnboarding.confirmWipe($("#wipeHost")); };
+  syncModule();
+})();
+</script>
 </body>
 </html>
+
