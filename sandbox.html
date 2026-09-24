@@ -10,7 +10,7 @@
 <script>
   /* 还没走完首次引导就先藏住内容，免得遮罩出现前闪一下。 */
   try{
-    if(window.top === window.self) location.replace("index.html#sandbox");
+    if(window.top === window.self) location.replace("index.html" + (sessionStorage.getItem("xinxu.unlocked.v1") === "1" ? "#sandbox" : ""));
     if(window.top !== window.self) document.documentElement.classList.add("embedded");
     if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1") && sessionStorage.getItem("xinxu.unlocked.v1") === "1"))
       document.documentElement.className += " xo-pending";

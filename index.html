@@ -11,6 +11,8 @@
   /* 还没走完首次引导就先藏住内容，免得遮罩出现前闪一下。
      判断要同步做在 head 里，放到 body 末尾就来不及了。 */
   try{
+    if(sessionStorage.getItem("xinxu.unlocked.v1") !== "1" && (location.hash === "#assist" || location.hash === "#sandbox"))
+      history.replaceState(null, "", location.pathname + location.search);
     if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1") && sessionStorage.getItem("xinxu.unlocked.v1") === "1"))
       document.documentElement.className += " xo-pending";
   }catch(e){ document.documentElement.className += " xo-pending"; }

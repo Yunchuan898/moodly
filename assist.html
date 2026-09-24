@@ -9,7 +9,7 @@
 <style>html.xo-pending .shell{visibility:hidden}</style>
 <script>
   try{
-    if(window.top === window.self) location.replace("index.html#assist");
+    if(window.top === window.self) location.replace("index.html" + (sessionStorage.getItem("xinxu.unlocked.v1") === "1" ? "#assist" : ""));
     if(window.top !== window.self) document.documentElement.classList.add("embedded");
     if(!(localStorage.getItem("xinxu.account.v1") && localStorage.getItem("xinxu.consent.v1") && sessionStorage.getItem("xinxu.unlocked.v1") === "1"))
       document.documentElement.className += " xo-pending";

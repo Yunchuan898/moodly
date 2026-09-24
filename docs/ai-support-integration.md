@@ -1,6 +1,6 @@
 # AI 交流整合接口
 
-2026-09-24。独立 `ai-support/` 演示切片已并入现有 `assist.html`、`src/agent.js`、`src/memory.js` 与 `server/assist.py`，只保留一个交流入口和一个模型网关。登录后 `index.html` 是唯一主页；交流页作为同源子视图从主页打开，直接访问其 URL 会返回主页并打开交流模块。
+2026-09-24。独立 `ai-support/` 演示切片已并入现有 `assist.html`、`src/agent.js`、`src/memory.js` 与 `server/assist.py`，只保留一个交流入口和一个模型网关。登录后 `index.html` 是唯一主页；交流页作为同源子视图从主页打开。未登录时直接访问子页面仍先回到日记主页；已登录时可定位到主页中的对应模块。
 
 ## 页面与接口
 
