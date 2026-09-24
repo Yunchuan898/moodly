@@ -77,8 +77,8 @@
     color:var(--muted);letter-spacing:1px;margin-top:3px}
   .date{text-align:right;color:var(--muted);font-size:.82rem}
   .home-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:4px}
-  .home-actions button,.home-actions a{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer;text-decoration:none}
-  .home-actions button:hover,.home-actions a:hover{color:var(--lamp)}
+  .home-actions button{border:0;background:none;color:var(--muted);font:inherit;cursor:pointer}
+  .home-actions button:hover{color:var(--lamp)}
   .home-actions .device-entry{width:34px;height:30px;display:inline-flex;align-items:center;justify-content:center;
     border:1px solid var(--line);border-radius:10px;color:var(--lamp)}
   .home-actions .device-entry:hover{border-color:var(--lamp);background:var(--ink3)}
@@ -325,7 +325,7 @@
       <div class="date">
         <div class="home-actions"><button class="device-entry" id="openDevices" type="button" aria-label="选择设备" title="选择设备">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6l1 4H8l1-4ZM8 18h8l-1 4H9l-1-4Z"/><rect x="5" y="6" width="14" height="12" rx="3"/><path d="M9 12h6"/></svg>
-        </button><a id="toAssist" href="assist.html">交流</a>
+        </button>
         <button id="xinxuSafe" type="button">安全与支持</button>
         <button id="openSettings" type="button">设置</button></div>
         <strong id="todayStr">—</strong>
