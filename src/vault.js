@@ -192,8 +192,9 @@
     'xinxu.devices.v1',           // 设备数据（含占位数据）
     'xinxu.memory.v1',            // 长期记忆
     'xinxu.memory.pending.v1',    // 待确认的记忆提议
-    'xinxu.agent.config.v1',      // 模型提供方与后端地址
-    'xinxu.agent.sessions.v1'     // 精简会话日志
+    'xinxu.agent.config.v1',      // 旧版模型配置
+    'xinxu.agent.sessions.v1',    // 旧版会话日志
+    'xinxu.ai.consent.v2'         // AI 数据告知授权
   ];
 
   function clearAll() {
@@ -216,3 +217,4 @@
     clearAll: clearAll
   };
 })(window);
+

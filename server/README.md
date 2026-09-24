@@ -1,74 +1,26 @@
-# 心绪 · 对话后端
+# 心绪 AI 后端
 
-`assist.html` 里「设置 → 自建后端」填的地址，指的就是这个服务。
-
-这是**参考实现 / 骨架**，不是可以直接上线的服务。发上线前至少要补：
-经专业人员审阅的风险规则、限流、部署环境的密钥管理、真正的日志脱敏。
-
-## 跑起来
+在仓库根目录启动同源页面与接口。Python 3.10+：
 
 ```bash
-pip install -r requirements.txt
-
-# 密钥只走环境变量，不落代码、不落日志
-export MODEL_BASE_URL="https://api.deepseek.com/v1"   # 任何 OpenAI 兼容接口
-export MODEL_API_KEY="sk-..."
-export MODEL_NAME="deepseek-chat"                     # 按需要改
-
-uvicorn assist:app --port 8000
+pip install -r server/requirements.txt
+uvicorn server.assist:app --host 127.0.0.1 --port 8000
 ```
 
-然后打开 `assist.html` → 设置 → 提供方选「自建后端」→ 地址填
-`http://localhost:8000/assist`。
+真实 AI 对话需要以下环境变量，缺一则 `GET /assist/info` 的 `ready=false`，页面禁止发送：
 
-`GET /health` 能看到提示词版本、模型名和加载到的风险词条数。
+| 变量 | 用途 |
+|---|---|
+| `MODEL_BASE_URL` | OpenAI 兼容模型接口地址 |
+| `MODEL_API_KEY` | 模型密钥，仅服务端读取 |
+| `MODEL_NAME` | 模型名，需支持结构化输出 |
+| `AI_PROVIDER_NAME` | 告知用户的实际模型服务方 |
+| `AI_PROVIDER_PRIVACY_URL` | 服务方 HTTPS 隐私说明链接 |
+| `AI_PROVIDER_RETENTION` | 对本次请求的实际保留规则说明 |
 
-## 契约
+例如在 PowerShell 中先设置上述环境变量，再运行上面的命令。不要提交密钥；不要在无法核实服务方保留规则时填写虚构说明。
 
-```
-POST /assist
-请求  { input, task, goal, stage, context, safety }
-响应  { reply, strategy, suggest: { memory: [...], entry: {...} | null } }
-```
+`GET /assist/info` 返回供应商告知与版本，`POST /assist` 接收 `input`、`goal`、`stage`、`style`、`history`、`context`、`analysis`、`consent` 和 `consent_version`。用户在 `assist.html` 同意后才会调用。服务端只允许四种目标，从有限策略和行动目录中选取；模型只提出记忆候选，由用户确认后写入本机。明确高风险词句由服务端规则分流，不调用模型。 `GET /health` 返回模型配置和规则加载状态。
 
-跟 `src/agent.js` 里那个 http provider 是对齐的。
+这是本机原型：按 IP 的内存限流不能代替正式身份认证或滥用防护；风险规则和输出规则可能漏判，需要专业审阅。不要直接把服务暴露到公网。
 
-## 三件事为什么放在后端
-
-**1. 密钥。** 浏览器里的任何东西用户都能看到。密钥只能留在服务端。
-
-**2. 系统提示词。** 它是版本化的产品边界，不是普通配置。如果由客户端
-发过来，改个前端就能绕过全部限制。所以后端自己持有，`PROMPT_VERSION`
-跟着规则一起升。
-
-**3. 安全层。** 输入和输出两侧都要跑，且独立于主提示词——提示词里的
-约束是「请求模型配合」，安全层是「不配合也能拦住」。
-
-## 风险词表只有一份
-
-`assist.py` 不另抄一份词表，而是直接解析 `../src/safety-content.js`。
-抄一份的下场是两边慢慢漂开，而漂开的方向通常是服务端这份没人维护，
-于是线上跑的是最旧的那版。
-
-`/health` 会报出加载到的词条数，能一眼看出读没读到。
-
-## 这个骨架里已经做了的
-
-- 结构化输出（`with_structured_output` + Pydantic），而不是让模型吐
-  JSON 再自己 parse——中文回复里的引号和换行很容易把后者打乱
-- 高风险不走模型，直接返回求助入口。模型可能把危机话题当成一般的
-  情绪低落来接，那是最危险的失败模式
-- 输出检查：命中诊断、保证疗效、用药建议、声称联系了他人，就不把
-  那段话交给用户
-- 上下文压缩：只给坐标、次数、聚合值。**整段日记原文和沙盘摆放内容
-  都不给**——作品的意义归用户，不该被拿去当模型素材
-
-## 缺的
-
-- **限流**：现在谁都能打
-- **认证**：现在没有。上线前至少要有个来源校验，否则这就是个公开的
-  免费模型代理
-- **CORS 收紧**：现在是 `allow_origins=["*"]`
-- **风险规则的专业审阅**：`assess_input` 现在的规则只适合演示，
-  不能据此承诺识别危机
-- **日志**：现在不记任何东西。真要记，也不能记原文

@@ -1,7 +1,7 @@
 # 心绪 · 对话后端
 #
-# pip install -r requirements.txt
-# uvicorn assist:app --port 8000
+# 在仓库根目录：pip install -r server/requirements.txt
+# uvicorn server.assist:app --host 127.0.0.1 --port 8000
 #
 # 换模型只改环境变量，不用改代码——只要那家是 OpenAI 兼容接口。
 
@@ -10,3 +10,4 @@ uvicorn[standard]>=0.30
 langchain-core>=0.3
 langchain-openai>=0.2
 pydantic>=2.7
+

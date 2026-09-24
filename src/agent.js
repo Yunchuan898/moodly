@@ -18,23 +18,7 @@
 (function (global) {
   'use strict';
 
-  var CFG_KEY = 'xinxu.agent.config.v1';
-  var SES_KEY = 'xinxu.agent.sessions.v1';
-
-  /* ---------- 配置 ---------- */
-  function config() {
-    var c = null;
-    try { c = JSON.parse(global.localStorage.getItem(CFG_KEY) || 'null'); } catch (e) {}
-    c = c || {};
-    if (!c.provider) c.provider = 'stub';
-    return c;
-  }
-  function setConfig(patch) {
-    var c = config();
-    for (var k in patch) c[k] = patch[k];
-    try { global.localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch (e) {}
-    return c;
-  }
+  var NOTICE_VERSION = 'ai-support-v2';
 
   /* ================= Provider ================= */
   /* 接口契约（与核心架构文档 §3 的 POST /assist 对齐）：
@@ -42,66 +26,25 @@
      payload 里只有用户本次输入、本次目标、用户显式允许的上下文。
      不发全部历史日记、不发沙盘作品内容、不发设备原始数据。 */
 
-  /* --- 占位 provider：没有后端时让界面能跑通 --- */
-  /* 它不假装自己是模型。回复里会明说当前是占位。 */
-  var stub = {
-    name: 'stub',
-    label: '占位（未接模型）',
-    call: function (payload) {
-      return new Promise(function (res) {
-        setTimeout(function () {
-          var c = payload.context || {};
-          var bits = [];
-          if (c.recent && c.recent.length) bits.push('最近 ' + c.recent.length + ' 条记录');
-          if (c.devices) bits.push(c.devices.rows.length + ' 天设备线索');
-          if (c.memory) bits.push(c.memory.length + ' 条长期记忆');
-
-          var text =
-            '【当前是占位回复，没有真的调用模型】\n\n' +
-            '我这边能看到：' + (bits.length ? bits.join('、') : '暂时还没有可用的上下文') + '。\n' +
-            '你说的是：「' + String(payload.input || '').slice(0, 40) + '」。\n\n' +
-            '接上真实模型后，这里会是它基于上面这些上下文的回应。' +
-            '流程（汇总上下文 → 安全检查 → 调模型 → 再检查 → 执行记录）已经走通了，' +
-            '换成真的 provider 即可。';
-
-          res({
-            text: text,
-            strategy: '占位',
-            /* 占位器也要把「建议 → 用户确认 → 我们的代码落盘」这条链演示完整，
-               否则界面上看不到提议条，也不知道真接上模型后会长什么样。
-               真实 provider 的 suggest 由模型给，形状相同。 */
-            suggest: {
-              memory: [{ kind: 'fact', text: '这是占位 provider 提的一条建议' }],
-              entry: { v: 0.42, a: 0.30, note: '（占位建议，不是模型判断的）', tags: [] },
-            },
-            raw: null,
-          });
-        }, 420);
-      });
-    },
-  };
-
   /* --- HTTP provider：接自己的后端，密钥留服务端 --- */
-  /* 浏览器里绝不放模型密钥。后端地址由用户填，默认空。 */
+  /* 浏览器里绝不放模型密钥。 */
   var http = {
     name: 'http',
     label: '自建后端',
     call: function (payload) {
-      var c = config();
-      if (!c.endpoint) {
-        return Promise.reject(new Error('还没有填后端地址'));
-      }
       var ctrl = new AbortController();
-      var to = setTimeout(function () { ctrl.abort(); }, c.timeoutMs || 30000);
-      return fetch(c.endpoint, {
+      var to = setTimeout(function () { ctrl.abort(); }, 30000);
+      return fetch('/assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         signal: ctrl.signal,
       }).then(function (r) {
         clearTimeout(to);
-        if (!r.ok) throw new Error('后端返回 ' + r.status);
-        return r.json();
+        return r.json().then(function (body) {
+          if (!r.ok) throw new Error(body.detail || body.message || '后端返回 ' + r.status);
+          return body;
+        });
       }).then(function (j) {
         return {
           text: String(j.reply || j.text || ''),
@@ -113,8 +56,7 @@
     },
   };
 
-  var PROVIDERS = { stub: stub, http: http };
-  function provider() { return PROVIDERS[config().provider] || stub; }
+  function provider() { return http; }
 
   /* ================= 上下文 ================= */
   /* 只取需要的，且都做精简。设备与记忆都只取「用户已确认允许」的部分。 */
@@ -125,9 +67,9 @@
 
     var all = global.XinxuMood ? XinxuMood.loadEntries().entries : [];
 
-    if (use.entries !== false && global.XinxuMood) {
+    if (use.entries === true && global.XinxuMood) {
       ctx.total = all.length;
-      ctx.recent = all.slice(0, 20).map(function (e) {
+      ctx.recent = all.slice(0, 8).map(function (e) {
         return {
           date: e.date,
           time: XinxuMood.hmOf(e.ts),
@@ -154,7 +96,7 @@
     }
     ctx.signals = sig;
 
-    if (use.sandbox !== false && global.Scene) {
+    if (use.sandbox === true && global.Scene) {
       // 沙盘只给「有几次、什么时候、起没起名字」，不给摆放内容。
       // 作品的意义归用户，不该被拿去当模型的素材。
       ctx.sandbox = Scene.listScenes().slice(0, 10).map(function (s) {
@@ -167,8 +109,8 @@
       ctx.devices = XinxuWearables.contextFor(null, 7);
     }
 
-    if (use.memory !== false && global.XinxuMemory) {
-      ctx.memory = XinxuMemory.contextFor();
+    if (use.memory === true && global.XinxuMemory) {
+      ctx.memory = (XinxuMemory.contextFor() || []).slice(0, 10);
     }
 
     return ctx;
@@ -180,21 +122,20 @@
      就能绕过全部限制。权威副本在后端 server/assist.py 的 SYSTEM，
      跟着 PROMPT_VERSION 一起升版本。
      这里只发用户本次输入、本次目标，以及用户显式允许的上下文。 */
-  function buildPayload(req, ctx, safety) {
+  function buildPayload(req, ctx) {
+    var sentContext = {};
+    Object.keys(ctx).forEach(function (key) { if (key !== 'signals') sentContext[key] = ctx[key]; });
     return {
       input: String(req.input || ''),
       task: req.task || 'chat',
       goal: req.goal || null,
       stage: req.stage || 'explore',
-      context: ctx,
-      // 这里给的是「提示」，供后端参考；后端必须自己再判一次并以此为准，
-      // 因为客户端是可被改的。
-      safety: {
-        level: safety.level,
-        reasons: safety.reasons,
-        intensity: safety.intensity || 0,
-        lowStreak: safety.lowStreak || 0,
-      },
+      context: sentContext,
+      style: req.style || 'warm',
+      history: (req.history || []).slice(-6),
+      analysis: req.analysis || {},
+      consent: req.consent === true,
+      consent_version: NOTICE_VERSION,
     };
   }
 
@@ -245,22 +186,6 @@
     return result;
   }
 
-  /* ================= 会话 ================= */
-  function sessions() {
-    var a = null;
-    try { a = JSON.parse(global.localStorage.getItem(SES_KEY) || '[]'); } catch (e) {}
-    return Array.isArray(a) ? a : [];
-  }
-  function pushTurn(turn) {
-    var a = sessions();
-    a.push(turn);
-    if (a.length > 200) a = a.slice(-200);
-    try { global.localStorage.setItem(SES_KEY, JSON.stringify(a)); } catch (e) {}
-  }
-  function clearSessions() {
-    try { global.localStorage.removeItem(SES_KEY); } catch (e) {}
-  }
-
   /* ================= 主流程 ================= */
   /* 每一步都是独立的具名函数，便于单独看与单独测。 */
   function run(req) {
@@ -280,7 +205,7 @@
           : { level: 'none', reasons: [], intensity: 0, lowStreak: 0 };
         safety.intensity = ctx.signals.intensity;
         safety.lowStreak = ctx.signals.lowStreak;
-        return buildPayload(req, ctx, safety);
+        return buildPayload(req, ctx);
       })
       .then(function (pl) {
         payload = pl;
@@ -295,24 +220,20 @@
                      '如果我刚才的判断让你觉得被下了结论，那不是你的问题——是我的。' +
                      '你可以换一种说法再问我一次，或者直接说说现在的感受。';
           out.blocked = oc.reasons;
+          out.suggest = { memory: [], entry: null };
         }
         return commit(out, req, ctx);
       })
       .then(function (r) {
         actions = r;
-        pushTurn({
-          ts: Date.now(),
-          input: String(req.input || ''),
-          reply: out.text,
-          provider: provider().name,
-          safety: safety.level,
-          blocked: out.blocked || null,
-        });
         return {
           reply: out.text,
           strategy: out.strategy || '',
-          safety: safety,
+          safety: out.raw && out.raw.safety ? out.raw.safety : safety,
           blocked: out.blocked || null,
+          generatedBy: out.raw && out.raw.generatedBy ? out.raw.generatedBy : 'model',
+          understanding: out.raw && out.raw.understanding ? out.raw.understanding : '',
+          actions: out.blocked ? [] : (out.raw && out.raw.actions ? out.raw.actions : []),
           // 待用户确认的，不是已执行的
           suggest: { memory: actions.memory, entry: actions.entry },
           notes: actions.notes,
@@ -325,10 +246,9 @@
 
   global.XinxuAgent = {
     run: run,
-    config: config, setConfig: setConfig,
-    providers: PROVIDERS, provider: provider,
+    provider: provider,
     assessOutput: assessOutput,
-    sessions: sessions, clearSessions: clearSessions,
-    CFG_KEY: CFG_KEY, SES_KEY: SES_KEY,
+    NOTICE_VERSION: NOTICE_VERSION,
   };
 })(window);
+

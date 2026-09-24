@@ -86,6 +86,17 @@
 
   .empty{color:var(--muted);text-align:center;padding:28px 12px;font-size:.88rem;
     border:1px dashed var(--line);border-radius:var(--r-md)}
+  .goal-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .goal-row button[aria-pressed="true"]{background:var(--lamp);border-color:var(--lamp);color:var(--ink);font-weight:700}
+  .notice{font-size:.78rem;color:var(--muted);line-height:1.7}
+  .notice a{color:var(--lamp)}
+  .notice label{display:flex;align-items:flex-start;gap:8px;margin-top:10px;color:var(--paper)}
+  .notice input[type="checkbox"]{margin-top:5px;accent-color:var(--lamp)}
+  .notice details{margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+  .notice summary{cursor:pointer;color:var(--lamp)}
+  .action-item{padding:9px 0;border-top:1px solid var(--line);font-size:.84rem}
+  .action-item button{margin-top:6px;margin-right:6px}
+  .action-item input{width:100%;background:var(--ink3);border:1px solid var(--line);border-radius:8px;color:var(--paper);padding:8px}
 
   /* ---------- 提议条 ---------- */
   .propose{margin-top:12px;border-radius:var(--r-md);padding:13px 15px;
@@ -180,21 +191,42 @@
     <header class="topbar">
       <a class="back" href="index.html">← 心绪</a>
       <div class="brand">对话<small>说说现在，或者让我看看这些天的记录</small></div>
-      <div class="top-act">
-        <button class="btn" id="openSettings">设置</button>
-      </div>
+      <div class="top-act"></div>
     </header>
 
     <main class="stage">
       <section>
+        <div class="card">
+          <h2>这次希望怎么聊？</h2>
+          <div class="goal-row" id="goalRow" aria-label="本次对话目标">
+            <button class="btn" data-goal="be_heard" aria-pressed="true">听我说</button>
+            <button class="btn" data-goal="understand" aria-pressed="false">理清原因</button>
+            <button class="btn" data-goal="calm" aria-pressed="false">先缓一缓</button>
+            <button class="btn" data-goal="next_step" aria-pressed="false">找下一步</button>
+          </div>
+          <p class="sub">随时可以切换。建议会按这次目标调整，也可以跳过。</p>
+        </div>
+        <div class="card notice" id="aiNotice">
+          <h2>AI 数据告知</h2>
+          <p id="providerInfo">正在读取服务配置…</p>
+          <p>发送时会提交本次消息、最多六条本页对话、目标和策略给已配置的模型服务。模型可能处理敏感的情绪内容。请避免输入不想交给模型的信息。</p>
+          <details><summary>选择额外提供的信息</summary>
+            <label><input type="checkbox" id="includeEntries">最近情绪记录摘要（坐标与标签，无日记原文）</label>
+            <label><input type="checkbox" id="includeMemory">你已确认的长期记忆</label>
+            <label><input type="checkbox" id="includeDevices">设备线索（当前接口为演示数据）</label>
+          </details>
+          <label><input type="checkbox" id="aiConsent">我已阅读本次数据告知，同意发送所选内容</label>
+          <button class="btn" id="revokeConsent" type="button">撤销授权</button>
+        </div>
         <div class="card chat">
           <div class="chat-log" id="chatLog"></div>
           <div id="proposeBox"></div>
+          <div id="actionBox"></div>
           <div class="chat-in">
             <textarea id="say" placeholder="现在想说点什么？不用组织语言。"></textarea>
             <div class="row">
               <span class="grow" style="font-size:.72rem;color:var(--faint)">
-                只会把这次说的话和上面这些上下文发出去。整段日记原文不会发。
+                Ctrl/⌘ + Enter 发送。行动建议由你决定是否采用。
               </span>
               <button class="btn primary" id="send">说</button>
             </div>
@@ -222,39 +254,9 @@
 
     <footer>
       <b>这不是治疗，也不做诊断。</b><br/>
-      对话内容只保存在你自己的浏览器里。接自建后端时才会发出去，发什么由你决定。<br/>
+      当前页面对话关闭即消失；发送时会传给已配置的模型服务，保留规则见上方告知。<br/>
       模型给的建议需要你确认才会写入记录。
     </footer>
-  </div>
-
-  <!-- 设置 -->
-  <div class="overlay" id="setOverlay" role="dialog" aria-modal="true" aria-label="设置">
-    <div class="modal">
-      <button class="x" data-close="setOverlay" aria-label="关闭">×</button>
-      <h3>接哪个模型</h3>
-      <p class="sub">密钥放服务端，浏览器里绝不放。这里只填你自己的后端地址。</p>
-
-      <div class="field">
-        <label><b>提供方</b></label>
-        <select id="provSel" style="width:100%;background:var(--ink3);border:1px solid var(--line);
-          border-radius:var(--r-md);color:var(--paper);font-size:.9rem;padding:11px 13px;font-family:var(--sans)">
-          <option value="stub">占位（未接模型，界面可跑通）</option>
-          <option value="http">自建后端</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label><b>后端地址</b>（POST，需返回 {reply, strategy, suggest}）</label>
-        <input type="text" id="endpoint" placeholder="https://你的后端/assist" />
-      </div>
-
-      <div class="warnbox">
-        不要把模型密钥填在这里。浏览器里的任何东西用户都能看到，
-        密钥必须留在你自己的服务端。
-      </div>
-
-      <button class="go" id="saveSet">保存</button>
-    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -291,6 +293,36 @@
 
   /* ================= 对话 ================= */
   var turns = [];
+  var goal = "be_heard", providerInfo = null;
+  var phaseFor = { be_heard: "soothe", understand: "explore", calm: "soothe", next_step: "act" };
+  var consentKey = "xinxu.ai.consent.v2";
+  function consentSignature(info) {
+    return [info.noticeVersion, info.providerName, info.privacyUrl, info.retention].join("|");
+  }
+  function loadProviderInfo() {
+    fetch("/assist/info").then(function (r) { if (!r.ok) throw new Error("服务不可用"); return r.json(); })
+      .then(function (info) {
+        providerInfo = info;
+        var p = $("#providerInfo");
+        if (!info.ready) { p.textContent = "模型或供应商数据告知尚未配置，暂不能发送。"; return; }
+        p.innerHTML = "模型服务：" + esc(info.providerName) + "。数据保留：" + esc(info.retention) +
+          '。<a href="' + esc(info.privacyUrl) + '" target="_blank" rel="noopener noreferrer">查看供应商隐私说明</a>。';
+        try { $("#aiConsent").checked = localStorage.getItem(consentKey) === consentSignature(info); } catch (e) {}
+      }).catch(function () { $("#providerInfo").textContent = "无法读取模型服务配置。请从同源服务打开此页面。"; });
+  }
+  $("#goalRow").querySelectorAll("[data-goal]").forEach(function (b) {
+    b.onclick = function () {
+      goal = b.dataset.goal;
+      $("#goalRow").querySelectorAll("[data-goal]").forEach(function (x) {
+        x.setAttribute("aria-pressed", x === b ? "true" : "false");
+      });
+    };
+  });
+  $("#revokeConsent").onclick = function () {
+    $("#aiConsent").checked = false;
+    try { localStorage.removeItem(consentKey); } catch (e) {}
+    toast("已撤销 AI 授权");
+  };
 
   function renderChat() {
     var box = $("#chatLog");
@@ -361,11 +393,37 @@
     };
   }
 
+  function renderActions(res) {
+    var box = $("#actionBox");
+    var actions = Array.isArray(res.actions) ? res.actions : [];
+    if (!actions.length || (res.safety && res.safety.level === "urgent")) { box.innerHTML = ""; return; }
+    box.innerHTML = '<div class="propose"><h4>可以考虑的下一步 · 可改可跳过</h4>' +
+      actions.map(function (a, i) {
+        return '<div class="action-item"><b>' + esc(a.title) + '</b><p>' + esc(a.description) + '</p>' +
+          '<button class="btn" data-action="' + i + '">采用</button><button class="btn" data-skip="' + i + '">跳过</button></div>';
+      }).join("") + '</div>';
+    box.querySelectorAll("[data-action]").forEach(function (b) {
+      b.onclick = function () {
+        var item = b.closest(".action-item"), p = item.querySelector("p");
+        var input = document.createElement("input"); input.value = p.textContent; input.maxLength = 300;
+        p.replaceWith(input); b.textContent = "保存本次决定";
+        b.onclick = function () { item.textContent = "已采用：" + input.value.trim(); };
+      };
+    });
+    box.querySelectorAll("[data-skip]").forEach(function (b) { b.onclick = function () { b.closest(".action-item").remove(); }; });
+  }
+
   var busy = false;
   function send() {
     if (busy) return;
     var txt = $("#say").value.trim();
     if (!txt) { toast("先说点什么"); return; }
+    if (!providerInfo || !providerInfo.ready) { toast("模型服务尚未配置"); return; }
+    if (!$("#aiConsent").checked) { toast("请先阅读并同意 AI 数据告知"); return; }
+    try { localStorage.setItem(consentKey, consentSignature(providerInfo)); } catch (e) {}
+    var history = turns.slice(-6).filter(function (t) { return t.text !== "…"; }).map(function (t) {
+      return { role: t.me ? "user" : "assistant", content: t.text.slice(0, 1000) };
+    });
 
     busy = true;
     $("#send").disabled = true;
@@ -374,18 +432,20 @@
     turns.push({ me: false, text: "…" });
     renderChat();
 
-    Ag.run({ task: "chat", input: txt, use: { entries: true, sandbox: true, devices: true, memory: true } })
+    Ag.run({ task: "chat", input: txt, goal: goal, stage: phaseFor[goal], style: "warm",
+      consent: true, history: history,
+      use: { entries: $("#includeEntries").checked, sandbox: false,
+        devices: $("#includeDevices").checked, memory: $("#includeMemory").checked } })
       .then(function (res) {
         turns.pop();
         turns.push({
           me: false,
           text: res.reply,
-          meta: res.meta.provider === "stub"
-            ? "占位 provider · " + res.meta.ms + "ms"
-            : res.meta.provider + " · " + res.meta.ms + "ms",
+          meta: res.generatedBy === "safety-rule" ? "安全提示" : ((res.strategy || "AI 回复") + " · " + res.meta.ms + "ms"),
         });
         renderChat();
         renderPropose(res);
+        renderActions(res);
 
         // 安全检查命中就走求助入口。
         // 这里不接「一天只提醒一次」——对话里跨轮浮现的信号不能被日限静默掉。
@@ -397,7 +457,7 @@
       .catch(function (err) {
         turns.pop();
         turns.push({ me: false, text: "这次没发出去：" + (err && err.message ? err.message : "未知错误") +
-          "\n\n（检查一下设置里的后端地址。）" });
+          "\n\n请稍后重试，或检查服务是否已配置。" });
         renderChat();
       })
       .then(function () {
@@ -492,6 +552,7 @@
       html += items.map(function (m) {
         return '<div class="memo"><span class="k">' + esc(Mem.kindByKey(m.kind).name) + "</span>" +
           '<span class="t">' + esc(m.text) + "</span>" +
+          '<button class="x" data-edit="' + esc(m.id) + '" title="修改">改</button>' +
           '<button class="x" data-rm="' + esc(m.id) + '" title="删掉">✕</button></div>';
       }).join("");
     }
@@ -499,7 +560,8 @@
     html += '<div class="addrow"><select id="mk">' +
       Mem.KINDS.map(function (k) { return '<option value="' + k.key + '">' + esc(k.name) + "</option>"; }).join("") +
       '</select><input id="mt" placeholder="自己加一条" maxlength="60" />' +
-      '<button class="btn" id="mAdd">加</button></div>';
+      '<button class="btn" id="mAdd">加</button></div>' +
+      '<button class="btn" id="mClear" style="margin-top:10px">清除全部记忆</button>';
 
     box.innerHTML = html;
 
@@ -510,6 +572,15 @@
     box.querySelectorAll("[data-rm]").forEach(function (b) {
       b.onclick = function () { Mem.remove(b.dataset.rm); renderMemory(); };
     });
+    box.querySelectorAll("[data-edit]").forEach(function (b) {
+      b.onclick = function () {
+        var row = b.closest(".memo"), span = row.querySelector(".t"), input = document.createElement("input");
+        input.value = span.textContent; input.maxLength = 60; input.className = "t";
+        span.replaceWith(input); b.textContent = "存"; input.focus();
+        b.onclick = function () { if (input.value.trim()) Mem.update(b.dataset.edit, input.value.trim()); renderMemory(); };
+      };
+    });
+    $("#mClear").onclick = function () { if (confirm("清除全部长期记忆和待确认建议？")) { Mem.clear(); Mem.dropPending(); renderMemory(); } };
     $("#mAdd").onclick = function () {
       var t = $("#mt").value.trim();
       if (!t) return;
@@ -520,38 +591,12 @@
     $("#mt").addEventListener("keydown", function (e) { if (e.key === "Enter") $("#mAdd").click(); });
   }
 
-  /* ================= 设置 ================= */
-  function openSettings() {
-    var c = Ag.config();
-    $("#provSel").value = c.provider || "stub";
-    $("#endpoint").value = c.endpoint || "";
-    $("#setOverlay").classList.add("open");
-  }
-  $("#openSettings").onclick = openSettings;
-  $("#saveSet").onclick = function () {
-    Ag.setConfig({ provider: $("#provSel").value, endpoint: $("#endpoint").value.trim() });
-    $("#setOverlay").classList.remove("open");
-    toast("已保存");
-  };
-  document.querySelectorAll("[data-close]").forEach(function (b) {
-    b.onclick = function () { $("#" + b.dataset.close).classList.remove("open"); };
-  });
-  document.querySelectorAll(".overlay").forEach(function (o) {
-    o.addEventListener("click", function (e) { if (e.target === o) o.classList.remove("open"); });
-  });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") {
-      var open = document.querySelector(".overlay.open");
-      if (open) open.classList.remove("open");
-    }
-  });
-
   /* ================= 启动 ================= */
-  renderChat(); renderPlatforms(); renderDevices(); renderMemory();
+  renderChat(); renderPlatforms(); renderDevices(); renderMemory(); loadProviderInfo();
 
   // 会话不留原文：只留最近几条用于界面回看，关掉页面就没了。
-  // （XinxuAgent 里另有一份精简的会话日志，见「设置」的说明。）
 })();
 </script>
 </body>
 </html>
+
