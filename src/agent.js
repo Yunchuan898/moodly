@@ -123,9 +123,11 @@
     var use = req.use || {};
     var ctx = { today: global.XinxuMood ? XinxuMood.todayStr() : null };
 
+    var all = global.XinxuMood ? XinxuMood.loadEntries().entries : [];
+
     if (use.entries !== false && global.XinxuMood) {
-      var list = XinxuMood.loadEntries().entries.slice(0, 20);
-      ctx.recent = list.map(function (e) {
+      ctx.total = all.length;
+      ctx.recent = all.slice(0, 20).map(function (e) {
         return {
           date: e.date,
           time: XinxuMood.hmOf(e.ts),
@@ -136,8 +138,21 @@
           hasNote: !!(e.note && e.note.trim()),
         };
       });
-      ctx.total = list.length;
     }
+
+    /* 安全层要的两个量。
+       这里以前写死成 0——那等于安全层在最需要它的那类输入上永远不升级，
+       因为弱信号必须叠加「强度」或「反复出现」才有意义。 */
+    var sig = { intensity: 0, lowStreak: 0 };
+    if (all.length && global.XinxuSafety) {
+      var last = all[0];
+      sig.intensity = XinxuMood.intensity(last.v, last.a);
+      sig.lowStreak = XinxuSafety.lowStreak(all, {
+        from: XinxuMood.todayStr(),
+        valueOf: function (e) { return XinxuMood.legacyVal(e.v); },
+      });
+    }
+    ctx.signals = sig;
 
     if (use.sandbox !== false && global.Scene) {
       // 沙盘只给「有几次、什么时候、起没起名字」，不给摆放内容。
@@ -159,45 +174,27 @@
     return ctx;
   }
 
-  /* ================= 提示词 ================= */
-  /* 约束写死在这里，不让它漂。疗法名称不向用户宣称（调研文档 §4）。 */
-  function systemPrompt() {
-    return [
-      '你是「心绪」里的陪伴者。心绪是一个情绪记录与自我关怀工具，不是治疗服务。',
-      '',
-      '硬性边界，任何情况下都不越过：',
-      '· 不做诊断、不做心理状态判定、不给症状贴标签。',
-      '· 不宣称能治疗、不保证效果、不冒充专业人士。',
-      '· 不解读用户作品或情绪的象征含义——解释权归用户。',
-      '· 不替用户联系任何人，不给紧急情况下的替代方案。',
-      '· 不使用量表打分。',
-      '',
-      '怎么回应：',
-      '· 先接住，再给选择。不要一上来就给建议。',
-      '· 说具体的事，不说「你要多休息」这类空话。',
-      '· 用户说「只听我说」「换种方式」「别给建议」时，照做。',
-      '· 不确定就说不确定。',
-      '',
-      '关于上下文：',
-      '· 下面可能带情绪坐标、设备数据和长期记忆。设备数据只是背景线索，',
-      '  绝不能据此推断情绪或心理状态。睡眠短不等于心情差。',
-      '· 不要逐条复述用户的历史记录，那会像被监视。',
-      '',
-      '结构化建议：',
-      '如果你认为有值得长期记住的信息（称呼、偏好、明确有效的办法），',
-      '或用户表达了明确的心情坐标，放在 suggest 字段里。不要直接假设已经记录。',
-    ].join('\n');
-  }
-
+  /* ================= 请求载荷 ================= */
+  /* 注意这里**不发系统提示词**。
+     它是版本化的产品边界，不是普通配置：如果由客户端发过去，改个前端
+     就能绕过全部限制。权威副本在后端 server/assist.py 的 SYSTEM，
+     跟着 PROMPT_VERSION 一起升版本。
+     这里只发用户本次输入、本次目标，以及用户显式允许的上下文。 */
   function buildPayload(req, ctx, safety) {
     return {
       input: String(req.input || ''),
       task: req.task || 'chat',
       goal: req.goal || null,
       stage: req.stage || 'explore',
-      system: systemPrompt(),
       context: ctx,
-      safety: { level: safety.level, reasons: safety.reasons },
+      // 这里给的是「提示」，供后端参考；后端必须自己再判一次并以此为准，
+      // 因为客户端是可被改的。
+      safety: {
+        level: safety.level,
+        reasons: safety.reasons,
+        intensity: safety.intensity || 0,
+        lowStreak: safety.lowStreak || 0,
+      },
     };
   }
 
@@ -279,8 +276,10 @@
         // check() 有「同一天只提醒一次」的逻辑，那是给日记保存用的；
         // 对话里第 20 轮才浮现的危机信号不能被那条日限静默掉。
         safety = global.XinxuSafety
-          ? XinxuSafety.assess(req.input, { intensity: 0, lowStreak: 0 })
-          : { level: 'none', reasons: [] };
+          ? XinxuSafety.assess(req.input, ctx.signals)
+          : { level: 'none', reasons: [], intensity: 0, lowStreak: 0 };
+        safety.intensity = ctx.signals.intensity;
+        safety.lowStreak = ctx.signals.lowStreak;
         return buildPayload(req, ctx, safety);
       })
       .then(function (pl) {
